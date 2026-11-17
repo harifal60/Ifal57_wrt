@@ -19,7 +19,7 @@ jobs:
         run: |
           mkdir -p android-source
           unzip -q IFAL57_WRT_STB_source.zip -d android-source
-          ls -la android-source
+          find android-source -maxdepth 5 -type f
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -27,26 +27,23 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
+      - name: Find Gradle project and build APK
+        run: |
+          ROOT_DIR=$(find android-source -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit | xargs -r dirname)
 
-      - name: Build APK
-  run: |
-    ROOT_DIR=$(find android-source -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit | sed 's|/[^/]*$||')
+          if [ -z "$ROOT_DIR" ]; then
+            echo "Gradle project tidak ditemukan!"
+            find android-source -maxdepth 5 -type f
+            exit 1
+          fi
 
-    if [ -z "$ROOT_DIR" ]; then
-      echo "Gradle project tidak ditemukan!"
-      find android-source -maxdepth 4 -type f
-      exit 1
-    fi
-
-    cd "$ROOT_DIR"
-    gradle assembleDebug
+          echo "Gradle project: $ROOT_DIR"
+          cd "$ROOT_DIR"
+          gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: IFAL57_WRT_STB
-          path: android-source/**/app/build/outputs/apk/debug/*.apk
+          path: android-source/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
