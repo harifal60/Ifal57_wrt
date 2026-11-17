@@ -33,8 +33,17 @@ jobs:
           gradle-version: '8.9'
 
       - name: Build APK
-        run: gradle assembleDebug
-        working-directory: android-source
+  run: |
+    ROOT_DIR=$(find android-source -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit | sed 's|/[^/]*$||')
+
+    if [ -z "$ROOT_DIR" ]; then
+      echo "Gradle project tidak ditemukan!"
+      find android-source -maxdepth 4 -type f
+      exit 1
+    fi
+
+    cd "$ROOT_DIR"
+    gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
