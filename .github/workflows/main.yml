@@ -16,9 +16,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract Android source
-        run: |
-          unzip -q IFAL57_WRT_STB_source.zip -d .
-          ls -la IFAL57_WRT_STB_source
+  run: |
+    mkdir -p android-source
+    unzip -q IFAL57_WRT_STB_source.zip -d android-source
+    find android-source -type f \( -name settings.gradle -o -name settings.gradle.kts \)
 
       - name: Setup Java
         uses: actions/setup-java@v4
