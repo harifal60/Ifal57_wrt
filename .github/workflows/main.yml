@@ -15,6 +15,11 @@ jobs:
       - name: Download source code
         uses: actions/checkout@v4
 
+      - name: Extract Android source
+        run: |
+          unzip -q IFAL57_WRT_STB_source.zip -d .
+          ls -la IFAL57_WRT_STB_source
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -28,10 +33,10 @@ jobs:
 
       - name: Build APK
         run: gradle assembleDebug
+        working-directory: IFAL57_WRT_STB_source
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: IFAL57_WRT_STB
-          path: app/build/outputs/apk/debug/app-debug.apk
-          
+          path: IFAL57_WRT_STB_source/app/build/outputs/apk/debug/app-debug.apk
