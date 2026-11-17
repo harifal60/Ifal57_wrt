@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101820"><title>IFAL57_WRT</title><link rel="stylesheet" href="/style.css"></head>
+<body><header><div class="brand">IFAL57_WRT</div><span>ANDROID APP STORE</span><button id="adminBtn">ADMIN</button></header>
+<main><section class="hero"><div class="mark">57</div><h1>IFAL57_WRT</h1><p>Temukan dan unduh aplikasi Android pilihan.</p><small>HP ANDROID • ANDROID TV • STB</small></section>
+<section id="catalog"><div class="sectionhead"><h2>Daftar Aplikasi</h2><input id="search" placeholder="Cari aplikasi..."></div><div id="apps" class="apps">Memuat aplikasi...</div></section>
+</main>
+<dialog id="adminDialog"><button class="close" id="closeDialog">✕</button><h2 id="dialogTitle">Admin</h2><form id="authForm"><label>Username<input name="username" required autocomplete="username"></label><label>Password<input name="password" type="password" required autocomplete="current-password"></label><button class="primary" id="authSubmit">Masuk</button></form><form id="uploadForm" hidden><label>Nama aplikasi<input name="name" required></label><label>Versi<input name="version" required placeholder="1.0.0"></label><label>Deskripsi<input name="description"></label><label>File APK<input type="file" name="apk" accept=".apk" required></label><button class="primary">Upload APK</button></form><p id="message"></p><button id="logout" hidden>Keluar admin</button></dialog>
+<footer>© IFAL57_WRT</footer><script src="/app.js"></script></body></html>
