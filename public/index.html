@@ -1,8 +1,15 @@
 <!doctype html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101820"><title>IFAL57_WRT</title><link rel="stylesheet" href="/style.css"></head>
-<body><header><div class="brand">IFAL57_WRT</div><span>ANDROID APP STORE</span><button id="adminBtn">ADMIN</button></header>
-<main><section class="hero"><div class="mark">57</div><h1>IFAL57_WRT</h1><p>Temukan dan unduh aplikasi Android pilihan.</p><small>HP ANDROID • ANDROID TV • STB</small></section>
-<section id="catalog"><div class="sectionhead"><h2>Daftar Aplikasi</h2><input id="search" placeholder="Cari aplikasi..."></div><div id="apps" class="apps">Memuat aplikasi...</div></section>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f">
+<title>IFAL57_WRT</title><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar"><div class="brandmark">57</div><div class="brandcopy"><strong>IFAL57_WRT</strong><small>ANDROID APP CATALOG</small></div><button id="adminBtn" class="admin-button">Admin <span>↗</span></button></header>
+<main>
+<section class="hero"><div class="hero-content"><div class="eyebrow"><span class="pulse"></span> APK CENTER • ANDROID</div><h1>Temukan aplikasi.<br><span>Download dengan mudah.</span></h1><p>Katalog aplikasi pilihan untuk Android, Android TV dan STB.</p><div class="hero-tags"><span>ANDROID</span><span>ANDROID TV</span><span>STB</span></div></div><div class="hero-art"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="app-logo">57<span>_WRT</span></div><div class="floating-chip">APK COLLECTION</div></div></section>
+<section id="catalog"><div class="sectionhead"><div><div class="eyebrow section-label">LIBRARY</div><h2>Daftar Aplikasi</h2><p class="section-sub">Pilih aplikasi dan unduh versi yang tersedia.</p></div><div class="searchbox"><span>⌕</span><input id="search" placeholder="Cari aplikasi..." aria-label="Cari aplikasi"></div></div><div id="apps" class="apps">Memuat aplikasi...</div></section>
 </main>
+<footer><div class="footer-brand"><span class="footer-mark">57</span> IFAL57_WRT</div><span>Made for Android • TV • STB</span></footer>
 <dialog id="adminDialog"><button class="close" id="closeDialog">✕</button><h2 id="dialogTitle">Admin</h2><form id="authForm"><label>Username<input name="username" required autocomplete="username"></label><label>Password<input name="password" type="password" required autocomplete="current-password"></label><button class="primary" id="authSubmit">Masuk</button></form><form id="uploadForm" hidden><label>Nama aplikasi<input name="name" required></label><label>Versi<input name="version" required placeholder="1.0.0"></label><label>Deskripsi<input name="description"></label><label>File APK<input type="file" name="apk" accept="*/*" required></label><button class="primary">Upload APK</button></form><p id="message"></p><button id="logout" hidden>Keluar admin</button></dialog>
-<footer>© IFAL57_WRT</footer><script src="/app.js"></script></body></html>
+<script src="/app.js"></script></body></html>
