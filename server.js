@@ -127,7 +127,8 @@ app.get("/api/me", (req, res) =>
   res.json({ admin: req.session.admin || null })
 );
 
-app.get("/api/apps", (_, res) => {
+app.get("/api/apps", (req, res) => {
+  const isAdminLoggedIn = !!req.session.admin;
   const apps = readCatalog().map(item => ({
     id: item.id,
     name: item.name,
@@ -138,7 +139,8 @@ app.get("/api/apps", (_, res) => {
     createdAt: item.createdAt,
     iconUrl: item.iconFilename
       ? `/icons/${encodeURIComponent(path.basename(item.iconFilename))}`
-      : null
+      : null,
+    ...(isAdminLoggedIn ? { downloads: Number(item.downloads) || 0 } : {})
   }));
   res.json(apps);
 });
@@ -182,6 +184,7 @@ app.post("/api/upload", isAdmin, upload.single("apk"), async (req, res) => {
     filename: req.file.filename,
     size: req.file.size,
     iconFilename,
+    downloads: 0,
     createdAt: new Date().toISOString()
   };
   catalog.unshift(item);
@@ -211,7 +214,27 @@ app.delete("/api/apps/:id", isAdmin, (req, res) => {
 app.get("/download/:id", (req, res) => {
   const item = readCatalog().find(x => x.id === req.params.id);
   if (!item) return res.status(404).send("APK tidak ditemukan.");
-  res.download(path.join(APK_DIR, path.basename(item.filename)), item.name + ".apk");
+
+  const apkPath = path.join(APK_DIR, path.basename(item.filename));
+  if (!fs.existsSync(apkPath)) {
+    return res.status(404).send("File APK tidak tersedia di server.");
+  }
+
+  // Hitung unduhan hanya setelah file berhasil dikirim ke pengguna.
+  res.download(apkPath, item.name + ".apk", error => {
+    if (error) {
+      console.error("Gagal mengirim APK:", error.message);
+      if (!res.headersSent) res.status(500).send("Gagal mengunduh APK.");
+      return;
+    }
+
+    const latestCatalog = readCatalog();
+    const latestItem = latestCatalog.find(x => x.id === req.params.id);
+    if (latestItem) {
+      latestItem.downloads = (Number(latestItem.downloads) || 0) + 1;
+      writeCatalog(latestCatalog);
+    }
+  });
 });
 
 app.listen(PORT, () => console.log(`IFAL57_WRT running on port ${PORT}`));
