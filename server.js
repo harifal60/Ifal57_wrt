@@ -189,6 +189,31 @@ app.get("/api/admin/stats", isAdmin, (req, res) => {
   });
 });
 
+app.get("/api/admin/history", isAdmin, (req, res) => {
+  let events = [];
+  try {
+    events = JSON.parse(fs.readFileSync(DOWNLOAD_EVENTS_FILE, "utf8"));
+    if (!Array.isArray(events)) events = [];
+  } catch (_) {
+    events = [];
+  }
+
+  const requested = Number.parseInt(req.query.limit, 10);
+  const limit = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), 100) : 50;
+  const history = events
+    .filter(event => event && event.date)
+    .slice()
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, limit)
+    .map(event => ({
+      appId: String(event.appId || ""),
+      appName: String(event.appName || "Aplikasi"),
+      date: event.date
+    }));
+
+  res.json({ total: events.length, history });
+});
+
 app.post("/api/upload", isAdmin, upload.single("apk"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Pilih file APK yang valid." });
