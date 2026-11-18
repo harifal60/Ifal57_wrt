@@ -66,6 +66,82 @@ function setMessage(message, type = "info") {
   node.className = `message ${type}`;
 }
 
+function ensureAdminDashboard() {
+  if ($("#adminDashboard")) return;
+  const dashboard = document.createElement("section");
+  dashboard.id = "adminDashboard";
+  dashboard.className = "admin-dashboard";
+  dashboard.hidden = true;
+  dashboard.innerHTML = `
+    <div class="dashboard-heading">
+      <div>
+        <span class="dashboard-kicker">OVERVIEW</span>
+        <h3>Statistik Katalog</h3>
+      </div>
+      <button type="button" class="dashboard-refresh" id="refreshAdminStats">↻ Refresh</button>
+    </div>
+    <div class="dashboard-cards" id="dashboardCards"></div>
+    <div class="dashboard-panel">
+      <div class="dashboard-panel-title"><strong>Unduhan 7 hari terakhir</strong><span>Harian</span></div>
+      <div class="dashboard-chart" id="dashboardChart"></div>
+    </div>
+    <div class="dashboard-panel">
+      <div class="dashboard-panel-title"><strong>Aplikasi terpopuler</strong><span>Top 5</span></div>
+      <div class="dashboard-ranking" id="dashboardRanking"></div>
+    </div>`;
+  const intro = $("#adminIntro");
+  const uploadForm = $("#uploadForm");
+  if (intro && uploadForm) uploadForm.parentNode.insertBefore(dashboard, uploadForm);
+  else if (uploadForm) uploadForm.insertAdjacentElement("beforebegin", dashboard);
+}
+
+function renderAdminStats(stats) {
+  const cards = $("#dashboardCards");
+  const chart = $("#dashboardChart");
+  const ranking = $("#dashboardRanking");
+  if (!cards || !chart || !ranking) return;
+
+  cards.innerHTML = `
+    <div class="dashboard-stat"><span>Total aplikasi</span><strong>${Number(stats.appCount || 0).toLocaleString("id-ID")}</strong></div>
+    <div class="dashboard-stat"><span>Total unduhan</span><strong>${Number(stats.totalDownloads || 0).toLocaleString("id-ID")}</strong></div>
+    <div class="dashboard-stat"><span>Unduhan tercatat</span><strong>${Number(stats.trackedDownloads || 0).toLocaleString("id-ID")}</strong></div>`;
+
+  const days = Array.isArray(stats.daily) ? stats.daily : [];
+  const max = Math.max(1, ...days.map(day => Number(day.count) || 0));
+  chart.innerHTML = days.map(day => {
+    const count = Number(day.count) || 0;
+    const height = Math.max(5, Math.round((count / max) * 100));
+    return `<div class="chart-column" title="${esc(day.label)}: ${count} unduhan">
+      <strong>${count}</strong>
+      <div class="chart-track"><i style="height:${height}%"></i></div>
+      <span>${esc(day.label)}</span>
+    </div>`;
+  }).join("");
+
+  const apps = Array.isArray(stats.topApps) ? stats.topApps : [];
+  ranking.innerHTML = apps.length ? apps.map((item, index) => `
+    <div class="ranking-row">
+      <span class="ranking-number">${index + 1}</span>
+      <strong>${esc(item.name || "Aplikasi")}</strong>
+      <span>${Number(item.downloads || 0).toLocaleString("id-ID")}x</span>
+    </div>`).join("") : '<p class="dashboard-empty">Belum ada aplikasi.</p>';
+}
+
+async function loadAdminStats() {
+  ensureAdminDashboard();
+  const dashboard = $("#adminDashboard");
+  if (!dashboard) return;
+  dashboard.hidden = false;
+  const chart = $("#dashboardChart");
+  if (chart) chart.innerHTML = '<p class="dashboard-empty">Memuat statistik...</p>';
+  try {
+    const stats = await request("/api/admin/stats", { cache: "no-store" });
+    renderAdminStats(stats);
+  } catch (error) {
+    if (chart) chart.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Statistik belum bisa dimuat.")}</p>`;
+  }
+}
+
 function setAdminIntro(message) {
   let intro = $("#adminIntro");
   if (!intro) {
@@ -183,8 +259,13 @@ async function openAdmin() {
         ? "Buat akun admin untuk mengelola katalog. Password minimal 10 karakter."
         : "Masuk untuk mengunggah atau menghapus aplikasi dari katalog.");
     dialog.showModal();
-    if (loggedIn) await loadApps();
-    else renderApps();
+    if (loggedIn) {
+      await loadApps();
+      await loadAdminStats();
+    } else {
+      $("#adminDashboard")?.setAttribute("hidden", "");
+      renderApps();
+    }
   } catch (error) {
     dialog.showModal();
     $("#dialogTitle").textContent = "Panel Admin";
@@ -194,6 +275,9 @@ async function openAdmin() {
 }
 
 $("#adminBtn").addEventListener("click", openAdmin);
+document.addEventListener("click", (event) => {
+  if (event.target.closest("#refreshAdminStats")) loadAdminStats();
+});
 $("#closeDialog").addEventListener("click", () => dialog.close());
 $("#search").addEventListener("input", renderApps);
 
@@ -226,6 +310,7 @@ $("#authForm").addEventListener("submit", async (event) => {
     setMessage("Login berhasil. Anda sekarang bisa mengelola aplikasi.", "success");
     form.reset();
     await loadApps();
+    await loadAdminStats();
   } catch (error) {
     setMessage(error.message || "Login gagal. Coba lagi.", "error");
   } finally {
@@ -264,6 +349,7 @@ $("#uploadForm").addEventListener("submit", async (event) => {
     fileHint.textContent = "Format APK • Maksimal 300 MB";
     setMessage("APK berhasil diunggah dan sudah masuk ke katalog.", "success");
     await loadApps();
+    await loadAdminStats();
   } catch (error) {
     setMessage(error.message || "Upload gagal. Periksa koneksi lalu coba lagi.", "error");
   } finally {
@@ -283,6 +369,7 @@ $("#apps").addEventListener("click", async (event) => {
     await request(`/api/apps/${encodeURIComponent(button.dataset.delete)}`, { method: "DELETE" });
     setMessage("Aplikasi berhasil dihapus.", "success");
     await loadApps();
+    await loadAdminStats();
   } catch (error) {
     button.disabled = false;
     button.textContent = "Hapus";
