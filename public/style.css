@@ -99,3 +99,26 @@ footer{max-width:1180px;margin:auto;padding:25px 22px 36px;display:flex;align-it
 .footer-mark{width:30px;height:30px;border-radius:9px;font-size:12px}
 @media(max-width:760px){.hero{min-height:285px;padding:34px 30px}.hero-art{width:160px;height:160px;margin-right:0}.orbit-one{width:155px;height:155px}.orbit-two{width:118px;height:118px}.app-logo{width:83px;height:83px;border-radius:25px;font-size:27px}.app-logo span{font-size:10px}.floating-chip{right:-8px;bottom:0;padding:7px 9px;font-size:8px}.hero h1{font-size:clamp(31px,5vw,42px)}}
 @media(max-width:560px){.topbar{height:68px;padding:0 17px}.brandmark{width:42px;height:42px}.brandcopy strong{font-size:14px}main{padding:22px 16px 50px}.hero{padding:30px 23px;min-height:250px;border-radius:23px}.hero-art{display:none}.hero h1{font-size:34px;letter-spacing:-1.3px}.hero p{font-size:14px}.sectionhead{align-items:stretch;flex-direction:column;margin:38px 0 18px}.sectionhead h2{font-size:24px}.searchbox{width:100%}.apps{grid-template-columns:1fr;gap:13px}.app{padding:19px}dialog{padding:22px 18px;border-radius:19px}footer{padding:22px 17px 30px;align-items:flex-start;flex-direction:column}}
+
+/* Ikon asli APK — tambahan Premium 2.0 */
+.app-icon{overflow:hidden}
+.app-icon-image{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  padding:5px;
+  object-fit:contain;
+  border-radius:16px;
+  background:#fff;
+}
+.app-icon-fallback{
+  display:grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  font-size:27px;
+  line-height:1;
+  font-weight:800;
+}
+.app-icon-fallback[hidden]{display:none}

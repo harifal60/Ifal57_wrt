@@ -106,8 +106,11 @@ function renderApps() {
     const description = item.description || "Aplikasi Android untuk perangkat Anda.";
     return `<article class="app">
       <div class="app-topline">
-        <div class="app-icon" style="--icon-bg:${icon.background};--icon-accent:${icon.accent}" aria-hidden="true">
-          <span>${esc(icon.symbol)}</span><small>APK</small>
+        <div class="app-icon" style="--icon-bg:${icon.background};--icon-accent:${icon.accent}" aria-label="${esc(item.name || "Ikon aplikasi")}">
+          ${item.iconUrl
+            ? `<img class="app-icon-image" src="${esc(item.iconUrl)}" alt="" loading="lazy"><span class="app-icon-fallback" hidden>${esc(icon.symbol)}</span>`
+            : `<span class="app-icon-fallback">${esc(icon.symbol)}</span>`}
+          <small>APK</small>
         </div>
         <div class="app-title">
           <h3>${esc(item.name || "Aplikasi")}</h3>
@@ -124,6 +127,14 @@ function renderApps() {
       </div>
     </article>`;
   }).join("");
+
+  $("#apps").querySelectorAll(".app-icon-image").forEach((image) => {
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      const fallback = image.nextElementSibling;
+      if (fallback) fallback.hidden = false;
+    }, { once: true });
+  });
 }
 
 async function loadApps() {
