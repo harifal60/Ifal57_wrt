@@ -400,6 +400,21 @@ $("#uploadForm").addEventListener("submit", async (event) => {
   }
 });
 
+$("#apps").addEventListener("click", (event) => {
+  const link = event.target.closest("a.download");
+  if (!link) return;
+
+  // Satu ID unik untuk satu klik; browser retry akan memakai URL/ID yang sama.
+  const url = new URL(link.href, window.location.href);
+  if (!url.searchParams.has("downloadId")) {
+    const id = (window.crypto && typeof window.crypto.randomUUID === "function")
+      ? window.crypto.randomUUID()
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
+    url.searchParams.set("downloadId", id);
+    link.href = url.pathname + url.search;
+  }
+});
+
 $("#apps").addEventListener("click", async (event) => {
   const button = event.target.closest("[data-delete]");
   if (!button || button.disabled) return;
