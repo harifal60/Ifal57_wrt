@@ -88,9 +88,13 @@ function renderApps() {
   );
 
   ensureCatalogStats();
+  const totalDownloads = catalogItems.reduce((total, item) => total + (Number(item.downloads) || 0), 0);
+  const downloadSummary = loggedIn
+    ? ` • ${totalDownloads.toLocaleString("id-ID")} total unduhan`
+    : "";
   $("#catalogStats").textContent = query
-    ? `Menampilkan ${filtered.length} dari ${catalogItems.length} aplikasi`
-    : `${catalogItems.length} aplikasi tersedia`;
+    ? `Menampilkan ${filtered.length} dari ${catalogItems.length} aplikasi${downloadSummary}`
+    : `${catalogItems.length} aplikasi tersedia${downloadSummary}`;
 
   if (!filtered.length) {
     $("#apps").innerHTML = `<div class="catalog-empty">
@@ -120,6 +124,7 @@ function renderApps() {
       <div class="app-meta">
         <span class="meta-pill"><small>VERSI</small><strong>${esc(item.version || "—")}</strong></span>
         <span class="meta-pill"><small>UKURAN</small><strong>${esc(formatSize(item.size))}</strong></span>
+        ${loggedIn ? `<span class="meta-pill"><small>UNDUHAN</small><strong>${(Number(item.downloads) || 0).toLocaleString("id-ID")}x</strong></span>` : ""}
       </div>
       <div class="app-actions">
         <a class="download" href="/download/${encodeURIComponent(item.id)}">↓ <span>Unduh APK</span></a>
@@ -178,7 +183,8 @@ async function openAdmin() {
         ? "Buat akun admin untuk mengelola katalog. Password minimal 10 karakter."
         : "Masuk untuk mengunggah atau menghapus aplikasi dari katalog.");
     dialog.showModal();
-    renderApps();
+    if (loggedIn) await loadApps();
+    else renderApps();
   } catch (error) {
     dialog.showModal();
     $("#dialogTitle").textContent = "Panel Admin";
@@ -219,7 +225,7 @@ $("#authForm").addEventListener("submit", async (event) => {
     setAdminIntro("Unggah APK baru ke katalog IFAL57_WRT. File APK maksimal 300 MB.");
     setMessage("Login berhasil. Anda sekarang bisa mengelola aplikasi.", "success");
     form.reset();
-    renderApps();
+    await loadApps();
   } catch (error) {
     setMessage(error.message || "Login gagal. Coba lagi.", "error");
   } finally {
@@ -292,7 +298,7 @@ $("#logout").addEventListener("click", async () => {
     $("#uploadForm").hidden = true;
     $("#logout").hidden = true;
     dialog.close();
-    renderApps();
+    await loadApps();
   } catch (error) {
     setMessage(error.message || "Gagal keluar dari akun admin.", "error");
   }
