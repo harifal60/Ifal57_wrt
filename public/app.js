@@ -235,8 +235,12 @@ function renderApps() {
           <small>APK</small>
         </div>
         <div class="app-title">
-          <h3>${esc(item.name || "Aplikasi")}</h3>
+          <div class="app-name-line">
+            <h3>${esc(item.name || "Aplikasi")}</h3>
+            ${item.isUpdate ? '<span class="update-badge">UPDATE</span>' : ""}
+          </div>
           <p>${esc(description)}</p>
+          ${item.isUpdate && item.updatedAt ? `<small class="update-date">Versi baru · ${esc(new Date(item.updatedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }))}</small>` : ""}
         </div>
       </div>
       <div class="app-meta">
@@ -386,10 +390,14 @@ $("#uploadForm").addEventListener("submit", async (event) => {
   button.textContent = "Mengunggah...";
   setMessage("File sedang dikirim ke server. Jangan tutup halaman sampai selesai.", "info");
   try {
-    await request("/api/upload", { method: "POST", body: new FormData(form) });
+    const uploadResult = await request("/api/upload", { method: "POST", body: new FormData(form) });
     form.reset();
     fileHint.textContent = "Format APK • Maksimal 300 MB";
-    setMessage("APK berhasil diunggah dan sudah masuk ke katalog.", "success");
+    setMessage(uploadResult.updated
+      ? (uploadResult.versionChanged
+        ? "Versi aplikasi berhasil diperbarui. Label UPDATE tampil di katalog."
+        : "File aplikasi berhasil diganti. Nomor versi tidak berubah.")
+      : "APK berhasil diunggah dan sudah masuk ke katalog.", "success");
     await loadApps();
     await loadAdminStats();
   } catch (error) {

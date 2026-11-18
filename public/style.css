@@ -124,41 +124,8 @@ footer{max-width:1180px;margin:auto;padding:25px 22px 36px;display:flex;align-it
 .app-icon-fallback[hidden]{display:none}
 
 
-/* Dashboard Statistik Admin IFAL57_WRT */
-.admin-dashboard{margin:18px 0 20px;padding:16px;border:1px solid #dce8f1;border-radius:17px;background:linear-gradient(145deg,#f5faff,#fff);box-shadow:0 7px 22px #315a7610}
-.dashboard-heading,.dashboard-panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.dashboard-kicker{color:#3985ae;font-size:9px;font-weight:800;letter-spacing:2px}
-.dashboard-heading h3{margin:4px 0 0;color:#1d405a;font-size:18px}
-.dashboard-refresh{padding:8px 11px;border:1px solid #d4e3ed;border-radius:9px;background:#fff;color:#47718b;font-size:10px;font-weight:800}
-.dashboard-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
-.dashboard-stat{min-width:0;padding:12px 10px;border:1px solid #e1eaf1;border-radius:11px;background:#fff}
-.dashboard-stat span{display:block;color:#8296a6;font-size:9px;font-weight:700;line-height:1.4}
-.dashboard-stat strong{display:block;margin-top:6px;color:#246f9e;font-size:22px;overflow-wrap:anywhere}
-.dashboard-panel{margin-top:11px;padding:13px;border:1px solid #e1eaf1;border-radius:12px;background:#fff}
-.dashboard-panel-title strong{color:#34566e;font-size:12px}
-.dashboard-panel-title span{color:#91a1ae;font-size:9px}
-.dashboard-chart{height:142px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;align-items:end;margin-top:13px}
-.chart-column{height:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px}
-.chart-column>strong{color:#58768b;font-size:9px}
-.chart-track{height:88px;width:min(100%,24px);display:flex;align-items:flex-end;overflow:hidden;border-radius:7px;background:#eef5fa}
-.chart-track i{display:block;width:100%;min-height:4px;border-radius:7px;background:linear-gradient(180deg,#67b9e2,#287fb8)}
-.chart-column>span{color:#879aa9;font-size:8px;white-space:nowrap}
-.dashboard-ranking{margin-top:8px}
-.ranking-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid #edf2f6}
-.ranking-row:last-child{border-bottom:0}
-.ranking-number{width:21px;height:21px;display:grid;place-items:center;border-radius:7px;background:#edf6fc;color:#287cac;font-size:10px;font-weight:800}
-.ranking-row strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#45657b;font-size:11px}
-.ranking-row>span:last-child{color:#287cac;font-size:11px;font-weight:800}
-.dashboard-empty{margin:10px 0;color:#8498a8;font-size:11px;text-align:center}
-@media(max-width:420px){.admin-dashboard{padding:12px}.dashboard-cards{gap:6px}.dashboard-stat{padding:10px 7px}.dashboard-stat strong{font-size:19px}.dashboard-chart{gap:4px}.chart-column>span{font-size:7px}}
-
-
-/* Riwayat unduhan Admin */
-.download-history{margin-top:7px}
-.history-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #edf2f6}
-.history-row:last-child{border-bottom:0}
-.history-download-icon{flex:0 0 30px;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:#edf6fc;color:#287cac;font-size:18px;font-weight:800}
-.history-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.history-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#45657b;font-size:11px}
-.history-info small{color:#8a9ba8;font-size:9px}
-.history-status{padding:5px 8px;border-radius:7px;background:#f1f7fb;color:#4c7894;font-size:9px;font-weight:800}
+/* Label notifikasi versi baru */
+.app-name-line{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.app-name-line h3{margin-bottom:5px}
+.update-badge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:6px;background:#e5f4fc;color:#237eae;font-size:8px;font-weight:900;letter-spacing:.8px;line-height:1.3}
+.update-date{display:block;margin-top:4px;color:#3487ad;font-size:9px;font-weight:700}
