@@ -6,6 +6,7 @@ const multer = require("multer");
 const AppInfoParser = require("app-info-parser");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -21,6 +22,19 @@ fs.mkdirSync(APK_DIR, { recursive: true });
 fs.mkdirSync(ICON_DIR, { recursive: true });
 if (!fs.existsSync(CATALOG_FILE)) fs.writeFileSync(CATALOG_FILE, "[]");
 if (!fs.existsSync(DOWNLOAD_EVENTS_FILE)) fs.writeFileSync(DOWNLOAD_EVENTS_FILE, "[]");
+// Cegah satu klik download dihitung berkali-kali saat browser mengulang request.
+const countedDownloadIds = new Set();
+const recentFallbackDownloads = new Map();
+
+try {
+  const savedEvents = JSON.parse(fs.readFileSync(DOWNLOAD_EVENTS_FILE, "utf8"));
+  if (Array.isArray(savedEvents)) {
+    savedEvents.forEach(event => {
+      if (event && event.requestId) countedDownloadIds.add(String(event.requestId));
+    });
+  }
+} catch (_) {}
+
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
@@ -289,29 +303,65 @@ app.get("/download/:id", (req, res) => {
     return res.status(404).send("File APK tidak tersedia di server.");
   }
 
-  // Hitung unduhan hanya setelah file berhasil dikirim ke pengguna.
+  // ID dibuat oleh tombol Unduh di browser. Request ulang dengan ID sama
+  // tetap mengirim file, tetapi tidak menambah statistik untuk kedua kalinya.
+  const suppliedId = String(req.query.downloadId || "").slice(0, 100);
+  const requestId = suppliedId && /^[a-zA-Z0-9_-]{8,100}$/.test(suppliedId)
+    ? suppliedId
+    : null;
+
+  let shouldCount = false;
+  let fallbackKey = null;
+
+  if (requestId) {
+    if (!countedDownloadIds.has(requestId)) {
+      countedDownloadIds.add(requestId);
+      shouldCount = true;
+    }
+  } else {
+    // Kompatibilitas untuk link lama: deduplikasi singkat per sesi dan aplikasi.
+    fallbackKey = `${req.sessionID || req.ip}:${item.id}`;
+    const now = Date.now();
+    const previous = recentFallbackDownloads.get(fallbackKey) || 0;
+    if (now - previous > 3000) {
+      recentFallbackDownloads.set(fallbackKey, now);
+      shouldCount = true;
+    }
+  }
+
   res.download(apkPath, item.name + ".apk", error => {
     if (error) {
       console.error("Gagal mengirim APK:", error.message);
+      if (shouldCount && requestId) countedDownloadIds.delete(requestId);
       if (!res.headersSent) res.status(500).send("Gagal mengunduh APK.");
       return;
     }
 
+    if (!shouldCount) return;
+
     const latestCatalog = readCatalog();
     const latestItem = latestCatalog.find(x => x.id === req.params.id);
-    if (latestItem) {
-      latestItem.downloads = (Number(latestItem.downloads) || 0) + 1;
-      writeCatalog(latestCatalog);
+    if (!latestItem) return;
 
-      // Simpan waktu unduhan agar grafik harian bisa dibuat.
-      try {
-        let events = JSON.parse(fs.readFileSync(DOWNLOAD_EVENTS_FILE, "utf8"));
-        if (!Array.isArray(events)) events = [];
-        events.push({ appId: latestItem.id, appName: latestItem.name, date: new Date().toISOString() });
-        fs.writeFileSync(DOWNLOAD_EVENTS_FILE, JSON.stringify(events));
-      } catch (eventError) {
-        console.warn("Gagal menyimpan riwayat unduhan:", eventError.message);
-      }
+    latestItem.downloads = (Number(latestItem.downloads) || 0) + 1;
+    writeCatalog(latestCatalog);
+
+    try {
+      let events = JSON.parse(fs.readFileSync(DOWNLOAD_EVENTS_FILE, "utf8"));
+      if (!Array.isArray(events)) events = [];
+
+      // Cek sekali lagi sebelum menyimpan untuk menghindari duplikasi.
+      if (requestId && events.some(event => event && event.requestId === requestId)) return;
+
+      events.push({
+        appId: latestItem.id,
+        appName: latestItem.name,
+        date: new Date().toISOString(),
+        ...(requestId ? { requestId } : {})
+      });
+      fs.writeFileSync(DOWNLOAD_EVENTS_FILE, JSON.stringify(events));
+    } catch (eventError) {
+      console.warn("Gagal menyimpan riwayat unduhan:", eventError.message);
     }
   });
 });
