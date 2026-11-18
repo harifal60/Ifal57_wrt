@@ -151,3 +151,14 @@ footer{max-width:1180px;margin:auto;padding:25px 22px 36px;display:flex;align-it
 .ranking-row>span:last-child{color:#287cac;font-size:11px;font-weight:800}
 .dashboard-empty{margin:10px 0;color:#8498a8;font-size:11px;text-align:center}
 @media(max-width:420px){.admin-dashboard{padding:12px}.dashboard-cards{gap:6px}.dashboard-stat{padding:10px 7px}.dashboard-stat strong{font-size:19px}.dashboard-chart{gap:4px}.chart-column>span{font-size:7px}}
+
+
+/* Riwayat unduhan Admin */
+.download-history{margin-top:7px}
+.history-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #edf2f6}
+.history-row:last-child{border-bottom:0}
+.history-download-icon{flex:0 0 30px;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:#edf6fc;color:#287cac;font-size:18px;font-weight:800}
+.history-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.history-info strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#45657b;font-size:11px}
+.history-info small{color:#8a9ba8;font-size:9px}
+.history-status{padding:5px 8px;border-radius:7px;background:#f1f7fb;color:#4c7894;font-size:9px;font-weight:800}

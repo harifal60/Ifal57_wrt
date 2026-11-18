@@ -88,6 +88,10 @@ function ensureAdminDashboard() {
     <div class="dashboard-panel">
       <div class="dashboard-panel-title"><strong>Aplikasi terpopuler</strong><span>Top 5</span></div>
       <div class="dashboard-ranking" id="dashboardRanking"></div>
+    </div>
+    <div class="dashboard-panel">
+      <div class="dashboard-panel-title"><strong>Riwayat unduhan</strong><span id="historyCount">Terbaru</span></div>
+      <div class="download-history" id="downloadHistory"></div>
     </div>`;
   const intro = $("#adminIntro");
   const uploadForm = $("#uploadForm");
@@ -137,8 +141,46 @@ async function loadAdminStats() {
   try {
     const stats = await request("/api/admin/stats", { cache: "no-store" });
     renderAdminStats(stats);
+    await loadDownloadHistory();
   } catch (error) {
     if (chart) chart.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Statistik belum bisa dimuat.")}</p>`;
+  }
+}
+
+function renderDownloadHistory(data) {
+  const container = $("#downloadHistory");
+  const count = $("#historyCount");
+  if (!container) return;
+  const history = Array.isArray(data.history) ? data.history : [];
+  if (count) count.textContent = `${Number(data.total || 0).toLocaleString("id-ID")} tercatat`;
+  if (!history.length) {
+    container.innerHTML = '<p class="dashboard-empty">Belum ada riwayat unduhan. Riwayat akan muncul setelah APK berhasil diunduh.</p>';
+    return;
+  }
+  container.innerHTML = history.map(item => {
+    const date = new Date(item.date);
+    const dateText = Number.isNaN(date.getTime())
+      ? "Waktu tidak tersedia"
+      : date.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+    return `<div class="history-row">
+      <span class="history-download-icon">↓</span>
+      <div class="history-info">
+        <strong>${esc(item.appName || "Aplikasi")}</strong>
+        <small>${esc(dateText)}</small>
+      </div>
+      <span class="history-status">Unduh</span>
+    </div>`;
+  }).join("");
+}
+
+async function loadDownloadHistory() {
+  const container = $("#downloadHistory");
+  if (container) container.innerHTML = '<p class="dashboard-empty">Memuat riwayat...</p>';
+  try {
+    const data = await request("/api/admin/history?limit=50", { cache: "no-store" });
+    renderDownloadHistory(data);
+  } catch (error) {
+    if (container) container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Riwayat belum bisa dimuat.")}</p>`;
   }
 }
 
