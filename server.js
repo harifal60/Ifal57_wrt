@@ -153,6 +153,8 @@ app.get("/api/apps", (req, res) => {
     filename: item.filename,
     size: item.size,
     createdAt: item.createdAt,
+    updatedAt: item.updatedAt || null,
+    isUpdate: !!(item.updatedAt && Date.now() - new Date(item.updatedAt).getTime() <= 14 * 24 * 60 * 60 * 1000),
     iconUrl: item.iconFilename
       ? `/icons/${encodeURIComponent(path.basename(item.iconFilename))}`
       : null,
@@ -233,13 +235,24 @@ app.post("/api/upload", isAdmin, upload.single("apk"), async (req, res) => {
     return res.status(400).json({ error: "Pilih file APK yang valid." });
   }
 
-  const { name, version, description } = req.body;
+  const name = String(req.body.name || "").trim();
+  const version = String(req.body.version || "").trim();
+  const description = String(req.body.description || "").trim();
+
   if (!name || !version) {
     fs.unlinkSync(req.file.path);
     return res.status(400).json({ error: "Nama aplikasi dan versi wajib diisi." });
   }
 
-  const id = Date.now().toString();
+  const catalog = readCatalog();
+  const normalizedName = name.toLocaleLowerCase("id");
+  const existingIndex = catalog.findIndex(item =>
+    String(item.name || "").trim().toLocaleLowerCase("id") === normalizedName
+  );
+  const existing = existingIndex >= 0 ? catalog[existingIndex] : null;
+  const isVersionChange = !!(existing && String(existing.version || "") !== version);
+
+  const uploadId = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
   let iconFilename = null;
 
   // Ekstraksi ikon bersifat opsional: jika APK tidak terbaca, upload APK tetap berhasil.
@@ -249,7 +262,7 @@ app.post("/api/upload", isAdmin, upload.single("apk"), async (req, res) => {
     const extracted = decodeApkIcon(info && info.icon);
 
     if (extracted) {
-      iconFilename = `${id}.${extracted.extension}`;
+      iconFilename = `${uploadId}.${extracted.extension}`;
       fs.writeFileSync(path.join(ICON_DIR, iconFilename), extracted.buffer);
     } else {
       console.warn("Ikon APK tidak ditemukan atau formatnya tidak didukung:", req.file.originalname);
@@ -258,21 +271,60 @@ app.post("/api/upload", isAdmin, upload.single("apk"), async (req, res) => {
     console.warn("Gagal mengambil ikon APK; upload tetap dilanjutkan:", error.message);
   }
 
-  const catalog = readCatalog();
-  const item = {
-    id,
-    name,
-    version,
-    description: description || "",
-    filename: req.file.filename,
-    size: req.file.size,
-    iconFilename,
-    downloads: 0,
-    createdAt: new Date().toISOString()
-  };
-  catalog.unshift(item);
+  const now = new Date().toISOString();
+  const item = existing
+    ? {
+        ...existing,
+        name,
+        version,
+        description,
+        filename: req.file.filename,
+        size: req.file.size,
+        iconFilename,
+        downloads: Number(existing.downloads) || 0,
+        updatedAt: isVersionChange ? now : (existing.updatedAt || null)
+      }
+    : {
+        id: uploadId,
+        name,
+        version,
+        description,
+        filename: req.file.filename,
+        size: req.file.size,
+        iconFilename,
+        downloads: 0,
+        createdAt: now,
+        updatedAt: null
+      };
+
+  if (existing) {
+    catalog[existingIndex] = item;
+  } else {
+    catalog.unshift(item);
+  }
+
   writeCatalog(catalog);
-  res.json({ ok: true, app: item });
+
+  // Hapus file APK dan ikon versi lama setelah katalog berhasil diperbarui.
+  if (existing) {
+    const oldApk = path.join(APK_DIR, path.basename(existing.filename || ""));
+    if (existing.filename && oldApk !== req.file.path && fs.existsSync(oldApk)) {
+      try { fs.unlinkSync(oldApk); } catch (error) {
+        console.warn("File APK versi lama tidak bisa dihapus:", error.message);
+      }
+    }
+
+    if (existing.iconFilename && existing.iconFilename !== iconFilename) {
+      const oldIcon = path.join(ICON_DIR, path.basename(existing.iconFilename));
+      if (fs.existsSync(oldIcon)) {
+        try { fs.unlinkSync(oldIcon); } catch (error) {
+          console.warn("Ikon versi lama tidak bisa dihapus:", error.message);
+        }
+      }
+    }
+  }
+
+  res.json({ ok: true, updated: !!existing, versionChanged: isVersionChange, app: item });
 });
 
 app.delete("/api/apps/:id", isAdmin, (req, res) => {
