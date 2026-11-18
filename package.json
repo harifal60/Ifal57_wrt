@@ -4,9 +4,14 @@
   "private": true,
   "description": "IFAL57_WRT Android APK catalog and admin uploader",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
+    "app-info-parser": "^1.1.6",
     "bcryptjs": "^2.4.3",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
