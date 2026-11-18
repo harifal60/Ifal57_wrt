@@ -15,10 +15,12 @@ const APK_DIR = path.join(DATA_DIR, "apks");
 const ICON_DIR = path.join(DATA_DIR, "icons");
 const ADMIN_FILE = path.join(DATA_DIR, "admin.json");
 const CATALOG_FILE = path.join(DATA_DIR, "catalog.json");
+const DOWNLOAD_EVENTS_FILE = path.join(DATA_DIR, "download-events.json");
 
 fs.mkdirSync(APK_DIR, { recursive: true });
 fs.mkdirSync(ICON_DIR, { recursive: true });
 if (!fs.existsSync(CATALOG_FILE)) fs.writeFileSync(CATALOG_FILE, "[]");
+if (!fs.existsSync(DOWNLOAD_EVENTS_FILE)) fs.writeFileSync(DOWNLOAD_EVENTS_FILE, "[]");
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
@@ -145,6 +147,48 @@ app.get("/api/apps", (req, res) => {
   res.json(apps);
 });
 
+app.get("/api/admin/stats", isAdmin, (req, res) => {
+  const catalog = readCatalog();
+  let events = [];
+  try {
+    events = JSON.parse(fs.readFileSync(DOWNLOAD_EVENTS_FILE, "utf8"));
+    if (!Array.isArray(events)) events = [];
+  } catch (_) {
+    events = [];
+  }
+
+  const totalDownloads = catalog.reduce((sum, item) => sum + (Number(item.downloads) || 0), 0);
+  const topApps = catalog
+    .map(item => ({
+      id: item.id,
+      name: item.name,
+      downloads: Number(item.downloads) || 0
+    }))
+    .sort((a, b) => b.downloads - a.downloads || String(a.name).localeCompare(String(b.name)))
+    .slice(0, 5);
+
+  const today = new Date();
+  const daily = [];
+  for (let offset = 6; offset >= 0; offset--) {
+    const date = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - offset));
+    const key = date.toISOString().slice(0, 10);
+    const count = events.filter(event => String(event.date || "").slice(0, 10) === key).length;
+    daily.push({
+      date: key,
+      label: new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", timeZone: "UTC" }).format(date),
+      count
+    });
+  }
+
+  res.json({
+    appCount: catalog.length,
+    totalDownloads,
+    trackedDownloads: events.length,
+    daily,
+    topApps
+  });
+});
+
 app.post("/api/upload", isAdmin, upload.single("apk"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Pilih file APK yang valid." });
@@ -233,6 +277,16 @@ app.get("/download/:id", (req, res) => {
     if (latestItem) {
       latestItem.downloads = (Number(latestItem.downloads) || 0) + 1;
       writeCatalog(latestCatalog);
+
+      // Simpan waktu unduhan agar grafik harian bisa dibuat.
+      try {
+        let events = JSON.parse(fs.readFileSync(DOWNLOAD_EVENTS_FILE, "utf8"));
+        if (!Array.isArray(events)) events = [];
+        events.push({ appId: latestItem.id, appName: latestItem.name, date: new Date().toISOString() });
+        fs.writeFileSync(DOWNLOAD_EVENTS_FILE, JSON.stringify(events));
+      } catch (eventError) {
+        console.warn("Gagal menyimpan riwayat unduhan:", eventError.message);
+      }
     }
   });
 });
