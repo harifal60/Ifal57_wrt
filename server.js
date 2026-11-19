@@ -7,6 +7,7 @@ const AppInfoParser = require("app-info-parser");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -21,6 +22,16 @@ const USERS_FILE = path.join(DATA_DIR, "users.json");
 const PAYMENTS_FILE = path.join(DATA_DIR, "payments.json");
 const TRIAL_DAYS = 7;
 const LIFETIME_PRICE = 25000;
+
+function createMailTransporter() {
+  const user = process.env.GMAIL_USER;
+  const pass = String(process.env.GMAIL_APP_PASSWORD || "").replace(/\\s/g, "");
+  if (!user || !pass) return null;
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass }
+  });
+}
 
 fs.mkdirSync(APK_DIR, { recursive: true });
 fs.mkdirSync(ICON_DIR, { recursive: true });
@@ -184,6 +195,79 @@ app.post("/api/customer/login", async (req, res) => {
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
   res.json({ ok: true, account: customerStatus(user) });
+});
+
+// Reset password pelanggan melalui tautan email sekali pakai (berlaku 30 menit).
+app.post("/api/customer/forgot-password", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "Masukkan alamat email yang valid." });
+  }
+
+  const genericMessage = "Jika email terdaftar, tautan reset password akan dikirim. Periksa kotak masuk dan folder spam.";
+  const users = readUsers();
+  const user = users.find(item => item.email === email);
+  if (!user) return res.json({ ok: true, message: genericMessage });
+
+  const transporter = createMailTransporter();
+  if (!transporter) {
+    console.error("Reset password belum dikonfigurasi: GMAIL_USER atau GMAIL_APP_PASSWORD kosong.");
+    return res.status(503).json({ error: "Layanan email belum siap. Hubungi admin aplikasi." });
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  user.resetTokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  user.resetExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  writeUsers(users);
+
+  const appUrl = String(process.env.APP_URL || "").replace(/\/$/, "");
+  if (!appUrl || !appUrl.startsWith("https://")) {
+    delete user.resetTokenHash;
+    delete user.resetExpiresAt;
+    writeUsers(users);
+    return res.status(503).json({ error: "Alamat aplikasi (APP_URL) belum dikonfigurasi dengan benar." });
+  }
+
+  const resetUrl = `${appUrl}/?reset=${encodeURIComponent(token)}`;
+  try {
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: user.email,
+      subject: "Reset password IFAL57_WRT",
+      text: `Kami menerima permintaan untuk mengganti password akun IFAL57_WRT. Buka tautan ini dalam 30 menit:\n\n${resetUrl}\n\nJika bukan kamu yang meminta, abaikan email ini.`,
+      html: `<p>Kami menerima permintaan untuk mengganti password akun IFAL57_WRT.</p><p><a href="${resetUrl}">Buat password baru</a></p><p>Tautan berlaku selama 30 menit. Jika bukan kamu yang meminta, abaikan email ini.</p>`
+    });
+  } catch (error) {
+    delete user.resetTokenHash;
+    delete user.resetExpiresAt;
+    writeUsers(users);
+    console.error("Gagal mengirim email reset password:", error.message);
+    return res.status(502).json({ error: "Email reset gagal dikirim. Periksa pengaturan Gmail admin." });
+  }
+
+  res.json({ ok: true, message: genericMessage });
+});
+
+app.post("/api/customer/reset-password", async (req, res) => {
+  const token = String(req.body.token || "");
+  const password = String(req.body.password || "");
+  if (!token || token.length > 200) return res.status(400).json({ error: "Tautan reset tidak valid atau sudah kedaluwarsa." });
+  if (password.length < 10) return res.status(400).json({ error: "Password baru minimal 10 karakter." });
+
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const users = readUsers();
+  const user = users.find(item =>
+    item.resetTokenHash === tokenHash &&
+    item.resetExpiresAt &&
+    new Date(item.resetExpiresAt).getTime() > Date.now()
+  );
+  if (!user) return res.status(400).json({ error: "Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru." });
+
+  user.hash = await bcrypt.hash(password, 12);
+  delete user.resetTokenHash;
+  delete user.resetExpiresAt;
+  writeUsers(users);
+  res.json({ ok: true, message: "Password berhasil diganti. Silakan login dengan password baru." });
 });
 
 // Pembayaran Lifetime manual QRIS Rp25.000: pelanggan membuat permintaan, admin memverifikasi.
