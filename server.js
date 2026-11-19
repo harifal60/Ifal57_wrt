@@ -82,12 +82,22 @@ function customerStatus(user) {
   if (!user) return null;
   const end = new Date(user.trialEndsAt).getTime();
   const activeTrial = user.plan !== "lifetime" && Number.isFinite(end) && Date.now() < end;
-  return { email: user.email, plan: user.plan === "lifetime" ? "lifetime" : activeTrial ? "trial" : "expired", trialEndsAt: user.trialEndsAt, canDownload: user.plan === "lifetime" || activeTrial };
+  return { email: user.email, plan: user.plan === "lifetime" ? "lifetime" : activeTrial ? "trial" : "expired", trialEndsAt: user.trialEndsAt, canDownload: user.plan === "lifetime" || activeTrial, deviceBound: !!user.deviceId };
+}
+function requestDeviceId(req) {
+  return String(req.get("X-Device-ID") || req.body?.deviceId || "").trim().slice(0, 200);
+}
+function validDeviceId(value) {
+  return typeof value === "string" && value.length >= 12 && value.length <= 200 && /^[a-zA-Z0-9._:-]+$/.test(value);
+}
+function deviceMismatch(user, deviceId) {
+  return !!(user.deviceId && user.deviceId !== deviceId);
 }
 function requireCustomer(req, res, next) {
   if (!req.session.userId) return res.redirect("/?login=1");
   const user = readUsers().find(item => item.id === req.session.userId);
   if (!user) { req.session.userId = null; return res.redirect("/?login=1"); }
+  if (!user.deviceId || !req.session.deviceId || deviceMismatch(user, req.session.deviceId)) return res.status(403).send("Perangkat tidak cocok dengan lisensi akun ini.");
   if (!customerStatus(user).canDownload) return res.redirect("/?trial=expired");
   req.customer = user;
   next();
@@ -175,25 +185,35 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/customer/register", async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
+  const deviceId = requestDeviceId(req);
+  if (!validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak terbaca. Tutup lalu buka kembali aplikasi." });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Masukkan alamat email yang valid." });
   if (password.length < 10) return res.status(400).json({ error: "Password minimal 10 karakter." });
   const users = readUsers();
   if (users.some(user => user.email === email)) return res.status(409).json({ error: "Email sudah terdaftar. Silakan login." });
   const now = Date.now();
-  const user = { id: crypto.randomUUID(), email, hash: await bcrypt.hash(password, 12), createdAt: new Date(now).toISOString(), trialEndsAt: new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), plan: "trial" };
+  const user = { id: crypto.randomUUID(), email, hash: await bcrypt.hash(password, 12), createdAt: new Date(now).toISOString(), trialEndsAt: new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), plan: "trial", deviceId, deviceBoundAt: new Date(now).toISOString() };
   users.push(user); writeUsers(users);
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
+  req.session.deviceId = deviceId;
   res.json({ ok: true, account: customerStatus(user) });
 });
 
 app.post("/api/customer/login", async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
-  const user = readUsers().find(item => item.email === email);
+  const deviceId = requestDeviceId(req);
+  if (!validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak terbaca. Tutup lalu buka kembali aplikasi." });
+  const users = readUsers();
+  const user = users.find(item => item.email === email);
   if (!user || !(await bcrypt.compare(password, user.hash))) return res.status(401).json({ error: "Email atau password salah." });
+  if (deviceMismatch(user, deviceId)) return res.status(403).json({ error: "Akun ini sudah terikat ke perangkat lain. Hubungi admin untuk reset atau pindah perangkat." });
+  // Akun lama yang belum memiliki ikatan perangkat akan dikunci ke perangkat saat login berikutnya.
+  if (!user.deviceId) { user.deviceId = deviceId; user.deviceBoundAt = new Date().toISOString(); writeUsers(users); }
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
+  req.session.deviceId = deviceId;
   res.json({ ok: true, account: customerStatus(user) });
 });
 
@@ -287,7 +307,8 @@ app.post("/api/customer/payment-request", (req, res) => {
   const payments = readPayments();
   const pending = payments.find(item => item.userId === user.id && item.status === "pending");
   if (pending) return res.json({ ok: true, payment: pending });
-  const payment = { id: crypto.randomUUID(), userId: user.id, email: user.email, amount: LIFETIME_PRICE, status: "pending", createdAt: new Date().toISOString() };
+  if (!user.deviceId || !req.session.deviceId || deviceMismatch(user, req.session.deviceId)) return res.status(403).json({ error: "Perangkat tidak cocok dengan lisensi akun." });
+  const payment = { id: crypto.randomUUID(), userId: user.id, email: user.email, deviceId: user.deviceId, amount: LIFETIME_PRICE, status: "pending", createdAt: new Date().toISOString() };
   payments.push(payment); writePayments(payments);
   res.json({ ok: true, payment });
 });
@@ -302,17 +323,35 @@ app.post("/api/admin/payments/:id/approve", isAdmin, (req, res) => {
   if (!user) return res.status(404).json({ error: "User pembayaran tidak ditemukan." });
   user.plan = "lifetime"; user.lifetimeActivatedAt = new Date().toISOString();
   payment.status = "approved"; payment.approvedAt = new Date().toISOString(); payment.approvedBy = req.session.admin;
+  payment.deviceId = user.deviceId || payment.deviceId || null;
   writeUsers(users); writePayments(payments);
   res.json({ ok: true, payment, account: customerStatus(user) });
 });
 
+app.post("/api/admin/users/:id/reset-device", isAdmin, (req, res) => {
+  const users = readUsers();
+  const user = users.find(item => item.id === req.params.id);
+  if (!user) return res.status(404).json({ error: "Akun tidak ditemukan." });
+  const previousDeviceId = user.deviceId || null;
+  delete user.deviceId;
+  delete user.deviceBoundAt;
+  writeUsers(users);
+  // Sesi lama tidak lagi dapat mengunduh; pemilik harus login ulang untuk mengikat perangkat baru.
+  res.json({ ok: true, email: user.email, previousDeviceId });
+});
+
 app.post("/api/customer/logout", (req, res) => {
   req.session.userId = null;
+  req.session.deviceId = null;
   res.json({ ok: true });
 });
 
 app.get("/api/customer/me", (req, res) => {
   const user = req.session.userId ? readUsers().find(item => item.id === req.session.userId) : null;
+  if (user && (!user.deviceId || !req.session.deviceId || deviceMismatch(user, req.session.deviceId))) {
+    req.session.userId = null; req.session.deviceId = null;
+    return res.status(403).json({ error: "Sesi perangkat tidak cocok. Silakan login kembali." });
+  }
   res.json({ account: customerStatus(user) });
 });
 
