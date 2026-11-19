@@ -118,6 +118,10 @@ function ensureAdminDashboard() {
       <div class="download-history" id="downloadHistory"></div>
     </div>
     <div class="dashboard-panel">
+      <div class="dashboard-panel-title"><strong>Daftar Pengguna & Device ID</strong><button type="button" id="refreshUsers" class="dashboard-refresh">Refresh</button></div>
+      <div id="registeredUsers" class="download-history">Memuat daftar pengguna...</div>
+    </div>
+    <div class="dashboard-panel">
       <div class="dashboard-panel-title"><strong>Permintaan Premium Lifetime</strong><button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></div>
       <div id="paymentRequests" class="download-history">Memuat permintaan pembayaran...</div>
     </div>`;
@@ -170,6 +174,7 @@ async function loadAdminStats() {
     const stats = await request("/api/admin/stats", { cache: "no-store" });
     renderAdminStats(stats);
     await loadDownloadHistory();
+    await loadRegisteredUsers();
     await loadPaymentRequests();
   } catch (error) {
     if (chart) chart.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Statistik belum bisa dimuat.")}</p>`;
@@ -200,6 +205,21 @@ function renderDownloadHistory(data) {
       <span class="history-status">Unduh</span>
     </div>`;
   }).join("");
+}
+
+async function loadRegisteredUsers() {
+  const container = $("#registeredUsers"); if (!container) return;
+  container.innerHTML = '<p class="dashboard-empty">Memuat daftar pengguna...</p>';
+  try {
+    const data = await request("/api/admin/users", { cache: "no-store" });
+    const users = Array.isArray(data.users) ? data.users : [];
+    if (!users.length) { container.innerHTML = '<p class="dashboard-empty">Belum ada pengguna terdaftar.</p>'; return; }
+    container.innerHTML = users.map(user => {
+      const plan = user.plan === "lifetime" ? "Premium permanen" : user.plan === "trial" ? "Trial aktif" : "Trial berakhir";
+      const created = user.createdAt ? new Date(user.createdAt).toLocaleString("id-ID") : "—";
+      return `<div class="history-row"><div class="history-info"><strong>${esc(user.email)}</strong><small>${esc(plan)} · Daftar: ${esc(created)}<br>Device ID: ${esc(user.deviceId || "Belum terikat")}</small></div><button type="button" class="text-button" data-reset-device="${esc(user.id)}">Reset perangkat</button></div>`;
+    }).join("");
+  } catch (error) { container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Daftar pengguna tidak dapat dimuat.")}</p>`; }
 }
 
 async function loadPaymentRequests() {
@@ -369,7 +389,7 @@ document.addEventListener("click", async (event) => {
   if (reset) {
     if (!confirm("Reset ikatan perangkat akun ini? Akun akan terikat ke perangkat berikutnya saat login.")) return;
     reset.disabled = true;
-    try { await request(`/api/admin/users/${encodeURIComponent(reset.dataset.resetDevice)}/reset-device`, { method: "POST" }); await loadPaymentRequests(); setMessage("Ikatan perangkat direset. Login berikutnya akan mengikat perangkat baru.", "success"); }
+    try { await request(`/api/admin/users/${encodeURIComponent(reset.dataset.resetDevice)}/reset-device`, { method: "POST" }); await loadPaymentRequests(); await loadRegisteredUsers(); setMessage("Ikatan perangkat direset. Login berikutnya akan mengikat perangkat baru.", "success"); }
     catch (error) { reset.disabled = false; setMessage(error.message, "error"); }
   }
 });
@@ -504,6 +524,8 @@ async function openAdmin() {
 $("#adminBtn").addEventListener("click", openAdmin);
 document.addEventListener("click", (event) => {
   if (event.target.closest("#refreshAdminStats")) loadAdminStats();
+  if (event.target.closest("#refreshUsers")) loadRegisteredUsers();
+  if (event.target.closest("#refreshPayments")) loadPaymentRequests();
 });
 $("#closeDialog").addEventListener("click", () => dialog.close());
 $("#search").addEventListener("input", renderApps);
