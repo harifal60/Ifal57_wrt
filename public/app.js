@@ -5,6 +5,9 @@ const dialog = $("#adminDialog");
 let setupRequired = false;
 let loggedIn = false;
 let catalogItems = [];
+let customerAccount = null;
+let customerMode = "login";
+const userDialog = $("#userDialog");
 
 const iconThemes = [
   ["#55b6e8", "#216c9e"],
@@ -264,6 +267,58 @@ function renderApps() {
   });
 }
 
+function setCustomerMessage(message, type = "info") {
+  const node = $("#customerMessage");
+  node.textContent = message; node.className = `message ${type}`;
+}
+
+function renderCustomerAccount() {
+  const bar = $("#accountBar");
+  if (!customerAccount) { bar.hidden = true; $("#userBtn").textContent = "Login / Daftar"; return; }
+  bar.hidden = false;
+  const status = customerAccount.plan === "lifetime" ? "PREMIUM PERMANEN" : customerAccount.plan === "trial" ? `TRIAL sampai ${new Date(customerAccount.trialEndsAt).toLocaleDateString("id-ID")}` : "TRIAL BERAKHIR";
+  bar.innerHTML = `<div><strong>${esc(customerAccount.email)}</strong><small>${esc(status)}</small></div><button type="button" id="customerLogout" class="text-button">Keluar</button>`;
+  $("#userBtn").textContent = customerAccount.plan === "lifetime" ? "Premium aktif" : "Akun saya";
+}
+
+async function refreshCustomer() {
+  try { const data = await request("/api/customer/me", { cache: "no-store" }); customerAccount = data.account || null; }
+  catch (_) { customerAccount = null; }
+  renderCustomerAccount();
+}
+
+function openCustomerDialog(mode = "login") {
+  customerMode = mode;
+  $("#userDialogTitle").textContent = mode === "register" ? "Buat akun IFAL57_WRT" : "Login IFAL57_WRT";
+  $("#customerSubmit").textContent = mode === "register" ? "Daftar & mulai trial" : "Login";
+  $("#toggleCustomerMode").textContent = mode === "register" ? "Sudah punya akun? Login" : "Belum punya akun? Daftar";
+  $("#customerForm").elements.password.autocomplete = mode === "register" ? "new-password" : "current-password";
+  setCustomerMessage(mode === "register" ? "Trial gratis 7 hari dimulai setelah pendaftaran berhasil." : "Masuk untuk mengakses unduhan sesuai status akun.");
+  userDialog.showModal();
+}
+
+$("#userBtn").addEventListener("click", () => openCustomerDialog(customerAccount ? "login" : "login"));
+$("#closeUserDialog").addEventListener("click", () => userDialog.close());
+$("#toggleCustomerMode").addEventListener("click", () => openCustomerDialog(customerMode === "login" ? "register" : "login"));
+$("#customerForm").addEventListener("submit", async (event) => {
+  event.preventDefault(); const form = event.currentTarget; const button = $("#customerSubmit");
+  const data = Object.fromEntries(new FormData(form)); button.disabled = true; button.textContent = "Memproses...";
+  try {
+    const result = await request(customerMode === "register" ? "/api/customer/register" : "/api/customer/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    customerAccount = result.account; renderCustomerAccount(); userDialog.close(); form.reset();
+    const params = new URLSearchParams(location.search);
+    if (params.has("login") || params.has("trial")) history.replaceState({}, "", location.pathname);
+    await loadApps();
+  } catch (error) { setCustomerMessage(error.message || "Tidak bisa memproses akun.", "error"); }
+  finally { button.disabled = false; button.textContent = customerMode === "register" ? "Daftar & mulai trial" : "Login"; }
+});
+
+$("#accountBar").addEventListener("click", async (event) => {
+  if (!event.target.closest("#customerLogout")) return;
+  try { await request("/api/customer/logout", { method: "POST" }); customerAccount = null; renderCustomerAccount(); await loadApps(); }
+  catch (error) { alert(error.message); }
+});
+
 async function loadApps() {
   $("#apps").innerHTML = '<div class="catalog-loading">Memuat katalog aplikasi...</div>';
   try {
@@ -456,4 +511,9 @@ $("#logout").addEventListener("click", async () => {
   }
 });
 
-loadApps();
+refreshCustomer().then(() => {
+  loadApps();
+  const params = new URLSearchParams(location.search);
+  if (params.has("login")) openCustomerDialog("login");
+  if (params.has("trial")) { openCustomerDialog("login"); setCustomerMessage("Masa trial sudah berakhir. Login untuk melihat status akun dan informasi Premium.", "error"); }
+});

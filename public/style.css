@@ -360,3 +360,15 @@ footer{max-width:1180px;margin:auto;padding:25px 22px 36px;display:flex;align-it
   .dashboard-chart{gap:4px}
   .chart-column>span{font-size:7px}
 }
+
+/* Customer account and trial status */
+.top-actions{display:flex;align-items:center;gap:8px}
+.account-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:18px 0 0;padding:13px 16px;border:1px solid #cfe2ef;border-radius:14px;background:#f2f8fc;color:#19364c}
+.account-bar[hidden]{display:none}
+.account-bar div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.account-bar strong{font-size:13px;overflow-wrap:anywhere}
+.account-bar small{font-size:11px;color:#287db2;font-weight:800;letter-spacing:.4px}
+.text-button{border:0;background:transparent;color:#287db2;font-size:12px;font-weight:800;padding:10px;cursor:pointer}
+#userDialog .section-sub{margin:0 0 14px;color:#6a8294;font-size:13px;line-height:1.5}
+#userDialog .message{min-height:20px}
+@media(max-width:560px){.top-actions{gap:5px}.top-actions .admin-button{padding:9px 10px;font-size:11px}.account-bar{margin-top:14px}}
