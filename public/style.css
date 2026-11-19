@@ -413,3 +413,267 @@ footer{border-top-color:#e2ebe6}
 @media(max-width:560px){
   .hero{background:linear-gradient(120deg,#f0f8f5,#fff 65%,#e8f4ef)}
 }
+
+
+/* Emerald Teal — refined layout polish (CSS only; existing features untouched) */
+:root{
+  --blue:#0f766e;
+  --blue-dark:#115e59;
+  --muted:#71827e;
+  --line:#e2ebe7;
+}
+body{
+  background:#f7faf8;
+}
+.topbar{
+  min-height:72px;
+  box-shadow:0 3px 14px #183d3510;
+}
+.brandmark,.footer-mark{
+  box-shadow:0 4px 11px #0f766e20;
+}
+.admin-button{
+  border-color:#dce7e3;
+  box-shadow:0 2px 7px #183d3508;
+}
+.admin-button:hover{
+  transform:none;
+  background:#f1f7f5;
+  border-color:#b8d5cc;
+}
+.hero{
+  min-height:292px;
+  padding:38px 42px;
+  border-radius:24px;
+  box-shadow:0 10px 28px #1c55440d;
+}
+.hero:before{
+  opacity:.55;
+}
+.hero h1{
+  margin:18px 0 11px;
+  letter-spacing:-1.5px;
+}
+.hero h1 span{
+  background:none;
+  color:#0f766e;
+}
+.hero p{
+  line-height:1.65;
+}
+.hero-tags{
+  gap:8px;
+  margin-top:20px;
+}
+.hero-tags span{
+  padding:7px 11px;
+  color:#52736b;
+  background:#fff;
+  letter-spacing:.7px;
+}
+.sectionhead{
+  margin:38px 0 18px;
+  gap:18px;
+}
+.sectionhead h2{
+  letter-spacing:-.55px;
+}
+.searchbox{
+  border-color:#dce7e3;
+  border-radius:12px;
+  box-shadow:0 2px 9px #183d3508;
+}
+.searchbox:focus-within{
+  border-color:#83b9aa;
+  box-shadow:0 0 0 3px #0f766e12;
+}
+.apps{
+  gap:14px;
+}
+.app{
+  padding:18px;
+  border-color:#e3ebe7;
+  border-radius:17px;
+  box-shadow:0 4px 15px #183d3508;
+  background:#fff;
+}
+.app:before{
+  display:none;
+}
+.app:hover{
+  transform:translateY(-2px);
+  border-color:#c2dcd3;
+  box-shadow:0 8px 20px #183d3510;
+}
+.app-topline{
+  gap:13px;
+}
+.app-icon{
+  border-radius:16px;
+  box-shadow:0 4px 12px #183d3512;
+}
+.app-title h3{
+  font-size:17px;
+  letter-spacing:-.3px;
+  line-height:1.28;
+}
+.app-title p{
+  font-size:11px;
+}
+.app-meta{
+  gap:7px;
+  margin-top:14px;
+}
+.meta-pill{
+  padding:7px 9px;
+  border-color:#e6eeea;
+  background:#f7faf8;
+}
+.meta-pill strong{
+  color:#55766d;
+}
+.app-actions{
+  margin-top:14px;
+}
+.download,.primary{
+  border-color:#0f766e;
+  border-radius:10px;
+  background:#0f766e;
+  box-shadow:none;
+}
+.download:hover,.primary:hover{
+  transform:translateY(-1px);
+  background:#115e59;
+  box-shadow:0 4px 10px #0f766e20;
+}
+footer{
+  border-top-color:#e5ece8;
+}
+dialog{
+  border-color:#dce8e2;
+}
+@media(max-width:760px){
+  .hero{
+    min-height:0;
+    padding:32px 30px;
+  }
+}
+@media(max-width:560px){
+  .topbar{
+    height:66px;
+    min-height:66px;
+    padding:0 14px;
+    gap:10px;
+  }
+  .brandmark{
+    width:40px;
+    height:40px;
+    border-radius:13px;
+    font-size:17px;
+  }
+  .brandcopy strong{
+    font-size:13px;
+    letter-spacing:.8px;
+  }
+  .brandcopy small{
+    font-size:8px;
+    letter-spacing:1.5px;
+  }
+  .top-actions{
+    gap:5px;
+  }
+  .top-actions .admin-button{
+    padding:8px 9px;
+    border-radius:10px;
+    font-size:10px;
+    white-space:nowrap;
+  }
+  main{
+    padding:18px 14px 42px;
+  }
+  .hero{
+    padding:25px 21px;
+    border-radius:19px;
+  }
+  .eyebrow{
+    font-size:9px;
+    letter-spacing:2px;
+  }
+  .hero h1{
+    margin:15px 0 10px;
+    font-size:clamp(29px,8vw,33px);
+    line-height:1.14;
+    letter-spacing:-1.15px;
+  }
+  .hero p{
+    font-size:13px;
+    line-height:1.6;
+  }
+  .hero-tags{
+    gap:7px;
+    margin-top:16px;
+  }
+  .hero-tags span{
+    padding:6px 9px;
+    font-size:9px;
+  }
+  .sectionhead{
+    margin:30px 0 15px;
+    gap:13px;
+  }
+  .sectionhead h2{
+    font-size:23px;
+  }
+  .section-sub{
+    margin-top:6px;
+    font-size:12px;
+  }
+  .searchbox{
+    min-height:48px;
+    padding:0 12px;
+  }
+  .searchbox input{
+    padding:12px 0;
+    font-size:14px;
+  }
+  .catalog-stats{
+    margin:0 0 12px;
+    font-size:11px;
+  }
+  .apps{
+    gap:11px;
+  }
+  .app{
+    padding:15px;
+    border-radius:15px;
+  }
+  .app-topline{
+    min-height:58px;
+    gap:11px;
+  }
+  .app-icon{
+    width:56px;
+    height:56px;
+    flex-basis:56px;
+    border-radius:15px;
+  }
+  .app-title h3{
+    font-size:15px;
+  }
+  .app-title p{
+    font-size:10px;
+  }
+  .app-meta{
+    margin-top:12px;
+  }
+  .meta-pill{
+    padding:6px 8px;
+  }
+  .download{
+    padding:10px 13px;
+    font-size:12px;
+  }
+  footer{
+    padding:18px 14px 26px;
+  }
+}
