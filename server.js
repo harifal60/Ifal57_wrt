@@ -312,6 +312,19 @@ app.post("/api/customer/payment-request", (req, res) => {
   payments.push(payment); writePayments(payments);
   res.json({ ok: true, payment });
 });
+app.get("/api/admin/users", isAdmin, (req, res) => {
+  const users = readUsers().map(user => ({
+    id: user.id,
+    email: user.email,
+    plan: customerStatus(user).plan,
+    trialEndsAt: user.trialEndsAt || null,
+    createdAt: user.createdAt || null,
+    deviceId: user.deviceId || null,
+    deviceBoundAt: user.deviceBoundAt || null
+  })).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  res.json({ users, total: users.length });
+});
+
 app.get("/api/admin/payments", isAdmin, (req, res) => res.json({ payments: readPayments().sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }));
 app.post("/api/admin/payments/:id/approve", isAdmin, (req, res) => {
   const payments = readPayments();
