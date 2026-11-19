@@ -17,11 +17,14 @@ const ICON_DIR = path.join(DATA_DIR, "icons");
 const ADMIN_FILE = path.join(DATA_DIR, "admin.json");
 const CATALOG_FILE = path.join(DATA_DIR, "catalog.json");
 const DOWNLOAD_EVENTS_FILE = path.join(DATA_DIR, "download-events.json");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+const TRIAL_DAYS = 7;
 
 fs.mkdirSync(APK_DIR, { recursive: true });
 fs.mkdirSync(ICON_DIR, { recursive: true });
 if (!fs.existsSync(CATALOG_FILE)) fs.writeFileSync(CATALOG_FILE, "[]");
 if (!fs.existsSync(DOWNLOAD_EVENTS_FILE)) fs.writeFileSync(DOWNLOAD_EVENTS_FILE, "[]");
+if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, "[]");
 // Cegah satu klik download dihitung berkali-kali saat browser mengulang request.
 const countedDownloadIds = new Set();
 const recentFallbackDownloads = new Map();
@@ -54,9 +57,25 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/icons", express.static(ICON_DIR, { maxAge: "1d", immutable: true }));
 
 const readCatalog = () => JSON.parse(fs.readFileSync(CATALOG_FILE, "utf8"));
+const readUsers = () => JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
+const writeUsers = data => fs.writeFileSync(USERS_FILE, JSON.stringify(data, null, 2));
 const writeCatalog = data => fs.writeFileSync(CATALOG_FILE, JSON.stringify(data, null, 2));
 const isAdmin = (req, res, next) =>
   req.session.admin ? next() : res.status(401).json({ error: "Silakan login sebagai admin." });
+function customerStatus(user) {
+  if (!user) return null;
+  const end = new Date(user.trialEndsAt).getTime();
+  const activeTrial = user.plan !== "lifetime" && Number.isFinite(end) && Date.now() < end;
+  return { email: user.email, plan: user.plan === "lifetime" ? "lifetime" : activeTrial ? "trial" : "expired", trialEndsAt: user.trialEndsAt, canDownload: user.plan === "lifetime" || activeTrial };
+}
+function requireCustomer(req, res, next) {
+  if (!req.session.userId) return res.redirect("/?login=1");
+  const user = readUsers().find(item => item.id === req.session.userId);
+  if (!user) { req.session.userId = null; return res.redirect("/?login=1"); }
+  if (!customerStatus(user).canDownload) return res.redirect("/?trial=expired");
+  req.customer = user;
+  next();
+}
 
 function decodeApkIcon(value) {
   if (typeof value !== "string" || !value.trim()) return null;
@@ -134,6 +153,42 @@ app.post("/api/login", async (req, res) => {
   }
   req.session.admin = admin.username;
   res.json({ ok: true });
+});
+
+// Akun pelanggan terpisah dari akun admin. Trial dimulai saat registrasi pertama.
+app.post("/api/customer/register", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const password = String(req.body.password || "");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Masukkan alamat email yang valid." });
+  if (password.length < 10) return res.status(400).json({ error: "Password minimal 10 karakter." });
+  const users = readUsers();
+  if (users.some(user => user.email === email)) return res.status(409).json({ error: "Email sudah terdaftar. Silakan login." });
+  const now = Date.now();
+  const user = { id: crypto.randomUUID(), email, hash: await bcrypt.hash(password, 12), createdAt: new Date(now).toISOString(), trialEndsAt: new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), plan: "trial" };
+  users.push(user); writeUsers(users);
+  await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
+  req.session.userId = user.id;
+  res.json({ ok: true, account: customerStatus(user) });
+});
+
+app.post("/api/customer/login", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const password = String(req.body.password || "");
+  const user = readUsers().find(item => item.email === email);
+  if (!user || !(await bcrypt.compare(password, user.hash))) return res.status(401).json({ error: "Email atau password salah." });
+  await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
+  req.session.userId = user.id;
+  res.json({ ok: true, account: customerStatus(user) });
+});
+
+app.post("/api/customer/logout", (req, res) => {
+  req.session.userId = null;
+  res.json({ ok: true });
+});
+
+app.get("/api/customer/me", (req, res) => {
+  const user = req.session.userId ? readUsers().find(item => item.id === req.session.userId) : null;
+  res.json({ account: customerStatus(user) });
 });
 
 app.post("/api/logout", (req, res) =>
@@ -354,7 +409,7 @@ app.delete("/api/apps/:id", isAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/download/:id", (req, res) => {
+app.get("/download/:id", requireCustomer, (req, res) => {
   const item = readCatalog().find(x => x.id === req.params.id);
   if (!item) return res.status(404).send("APK tidak ditemukan.");
 
