@@ -319,8 +319,17 @@ async function refreshCustomer() {
   renderCustomerAccount();
 }
 
+function showCustomerForm(view = "login") {
+  $("#customerForm").hidden = view !== "login" && view !== "register";
+  $("#forgotPasswordForm").hidden = view !== "forgot";
+  $("#resetPasswordForm").hidden = view !== "reset";
+  $("#forgotPasswordBtn").hidden = view !== "login";
+  $("#toggleCustomerMode").hidden = view === "forgot" || view === "reset";
+}
+
 function openCustomerDialog(mode = "login") {
   customerMode = mode;
+  showCustomerForm(mode);
   $("#userDialogTitle").textContent = mode === "register" ? "Buat akun IFAL57_WRT" : "Login IFAL57_WRT";
   $("#customerSubmit").textContent = mode === "register" ? "Daftar & mulai trial" : "Login";
   $("#toggleCustomerMode").textContent = mode === "register" ? "Sudah punya akun? Login" : "Belum punya akun? Daftar";
@@ -338,6 +347,57 @@ document.addEventListener("click", async (event) => {
 });
 $("#closeUserDialog").addEventListener("click", () => userDialog.close());
 $("#toggleCustomerMode").addEventListener("click", () => openCustomerDialog(customerMode === "login" ? "register" : "login"));
+$("#forgotPasswordBtn").addEventListener("click", () => {
+  showCustomerForm("forgot");
+  $("#userDialogTitle").textContent = "Lupa password";
+  $("#forgotPasswordForm").elements.email.value = $("#customerForm").elements.email.value;
+  setCustomerMessage("Masukkan email yang kamu gunakan saat mendaftar.");
+});
+$("#backToLogin").addEventListener("click", () => openCustomerDialog("login"));
+$("#forgotPasswordForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  button.disabled = true;
+  button.textContent = "Mengirim...";
+  try {
+    const result = await request("/api/customer/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: form.elements.email.value })
+    });
+    setCustomerMessage(result.message || "Jika email terdaftar, link reset akan dikirim.", "success");
+  } catch (error) {
+    setCustomerMessage(error.message || "Tidak bisa mengirim link reset.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Kirim link reset";
+  }
+});
+$("#resetPasswordForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  const token = new URLSearchParams(location.search).get("reset");
+  button.disabled = true;
+  button.textContent = "Menyimpan...";
+  try {
+    const result = await request("/api/customer/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password: form.elements.password.value })
+    });
+    history.replaceState({}, "", location.pathname);
+    form.reset();
+    openCustomerDialog("login");
+    setCustomerMessage(result.message || "Password berhasil diganti. Silakan login.", "success");
+  } catch (error) {
+    setCustomerMessage(error.message || "Password belum bisa diganti.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Simpan password baru";
+  }
+});
 $("#customerForm").addEventListener("submit", async (event) => {
   event.preventDefault(); const form = event.currentTarget; const button = $("#customerSubmit");
   const data = Object.fromEntries(new FormData(form)); button.disabled = true; button.textContent = "Memproses...";
@@ -552,6 +612,11 @@ $("#logout").addEventListener("click", async () => {
 refreshCustomer().then(() => {
   loadApps();
   const params = new URLSearchParams(location.search);
-  if (params.has("login")) openCustomerDialog("login");
+  if (params.has("reset")) {
+    userDialog.showModal();
+    showCustomerForm("reset");
+    $("#userDialogTitle").textContent = "Buat password baru";
+    setCustomerMessage("Masukkan password baru minimal 10 karakter.");
+  } else if (params.has("login")) openCustomerDialog("login");
   if (params.has("trial")) { openCustomerDialog("login"); setCustomerMessage("Masa trial sudah berakhir. Login untuk melihat status akun dan informasi Premium.", "error"); }
 });
