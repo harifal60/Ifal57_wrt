@@ -18,13 +18,16 @@ const ADMIN_FILE = path.join(DATA_DIR, "admin.json");
 const CATALOG_FILE = path.join(DATA_DIR, "catalog.json");
 const DOWNLOAD_EVENTS_FILE = path.join(DATA_DIR, "download-events.json");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
+const PAYMENTS_FILE = path.join(DATA_DIR, "payments.json");
 const TRIAL_DAYS = 7;
+const LIFETIME_PRICE = 25000;
 
 fs.mkdirSync(APK_DIR, { recursive: true });
 fs.mkdirSync(ICON_DIR, { recursive: true });
 if (!fs.existsSync(CATALOG_FILE)) fs.writeFileSync(CATALOG_FILE, "[]");
 if (!fs.existsSync(DOWNLOAD_EVENTS_FILE)) fs.writeFileSync(DOWNLOAD_EVENTS_FILE, "[]");
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, "[]");
+if (!fs.existsSync(PAYMENTS_FILE)) fs.writeFileSync(PAYMENTS_FILE, "[]");
 // Cegah satu klik download dihitung berkali-kali saat browser mengulang request.
 const countedDownloadIds = new Set();
 const recentFallbackDownloads = new Map();
@@ -59,6 +62,8 @@ app.use("/icons", express.static(ICON_DIR, { maxAge: "1d", immutable: true }));
 const readCatalog = () => JSON.parse(fs.readFileSync(CATALOG_FILE, "utf8"));
 const readUsers = () => JSON.parse(fs.readFileSync(USERS_FILE, "utf8"));
 const writeUsers = data => fs.writeFileSync(USERS_FILE, JSON.stringify(data, null, 2));
+const readPayments = () => JSON.parse(fs.readFileSync(PAYMENTS_FILE, "utf8"));
+const writePayments = data => fs.writeFileSync(PAYMENTS_FILE, JSON.stringify(data, null, 2));
 const writeCatalog = data => fs.writeFileSync(CATALOG_FILE, JSON.stringify(data, null, 2));
 const isAdmin = (req, res, next) =>
   req.session.admin ? next() : res.status(401).json({ error: "Silakan login sebagai admin." });
@@ -179,6 +184,42 @@ app.post("/api/customer/login", async (req, res) => {
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
   res.json({ ok: true, account: customerStatus(user) });
+});
+
+// Pembayaran Lifetime manual QRIS Rp25.000: pelanggan membuat permintaan, admin memverifikasi.
+app.get("/api/customer/payment-request", (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: "Login terlebih dahulu." });
+  const user = readUsers().find(item => item.id === req.session.userId);
+  if (!user) return res.status(401).json({ error: "Akun tidak ditemukan." });
+  const payments = readPayments().filter(item => item.userId === user.id);
+  res.json({ price: LIFETIME_PRICE, latest: payments.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null });
+});
+app.post("/api/customer/payment-request", (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: "Login terlebih dahulu." });
+  const users = readUsers();
+  const user = users.find(item => item.id === req.session.userId);
+  if (!user) return res.status(401).json({ error: "Akun tidak ditemukan." });
+  if (user.plan === "lifetime") return res.status(409).json({ error: "Akun sudah Lifetime." });
+  const payments = readPayments();
+  const pending = payments.find(item => item.userId === user.id && item.status === "pending");
+  if (pending) return res.json({ ok: true, payment: pending });
+  const payment = { id: crypto.randomUUID(), userId: user.id, email: user.email, amount: LIFETIME_PRICE, status: "pending", createdAt: new Date().toISOString() };
+  payments.push(payment); writePayments(payments);
+  res.json({ ok: true, payment });
+});
+app.get("/api/admin/payments", isAdmin, (req, res) => res.json({ payments: readPayments().sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }));
+app.post("/api/admin/payments/:id/approve", isAdmin, (req, res) => {
+  const payments = readPayments();
+  const payment = payments.find(item => item.id === req.params.id);
+  if (!payment) return res.status(404).json({ error: "Permintaan pembayaran tidak ditemukan." });
+  if (payment.status === "approved") return res.json({ ok: true, payment });
+  const users = readUsers();
+  const user = users.find(item => item.id === payment.userId);
+  if (!user) return res.status(404).json({ error: "User pembayaran tidak ditemukan." });
+  user.plan = "lifetime"; user.lifetimeActivatedAt = new Date().toISOString();
+  payment.status = "approved"; payment.approvedAt = new Date().toISOString(); payment.approvedBy = req.session.admin;
+  writeUsers(users); writePayments(payments);
+  res.json({ ok: true, payment, account: customerStatus(user) });
 });
 
 app.post("/api/customer/logout", (req, res) => {
