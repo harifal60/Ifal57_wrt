@@ -95,6 +95,10 @@ function ensureAdminDashboard() {
     <div class="dashboard-panel">
       <div class="dashboard-panel-title"><strong>Riwayat unduhan</strong><span id="historyCount">Terbaru</span></div>
       <div class="download-history" id="downloadHistory"></div>
+    </div>
+    <div class="dashboard-panel">
+      <div class="dashboard-panel-title"><strong>Permintaan Premium Lifetime</strong><button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></div>
+      <div id="paymentRequests" class="download-history">Memuat permintaan pembayaran...</div>
     </div>`;
   const intro = $("#adminIntro");
   const uploadForm = $("#uploadForm");
@@ -145,6 +149,7 @@ async function loadAdminStats() {
     const stats = await request("/api/admin/stats", { cache: "no-store" });
     renderAdminStats(stats);
     await loadDownloadHistory();
+    await loadPaymentRequests();
   } catch (error) {
     if (chart) chart.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Statistik belum bisa dimuat.")}</p>`;
   }
@@ -175,6 +180,19 @@ function renderDownloadHistory(data) {
     </div>`;
   }).join("");
 }
+
+async function loadPaymentRequests() {
+  const container = $("#paymentRequests"); if (!container) return;
+  container.innerHTML = '<p class="dashboard-empty">Memuat permintaan pembayaran...</p>';
+  try {
+    const data = await request("/api/admin/payments", { cache: "no-store" });
+    const payments = Array.isArray(data.payments) ? data.payments : [];
+    const pending = payments.filter(p => p.status === "pending");
+    if (!payments.length) { container.innerHTML = '<p class="dashboard-empty">Belum ada permintaan pembayaran.</p>'; return; }
+    container.innerHTML = payments.map(p => `<div class="history-row"><div class="history-info"><strong>${esc(p.email)}</strong><small>Rp${Number(p.amount || 25000).toLocaleString("id-ID")} · ${esc(new Date(p.createdAt).toLocaleString("id-ID"))}</small></div><span class="history-status">${p.status === "approved" ? "Lifetime aktif" : "Menunggu"}</span>${p.status === "pending" ? `<button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button>` : ""}</div>`).join("");
+  } catch (error) { container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Permintaan tidak dapat dimuat.")}</p>`; }
+}
+
 
 async function loadDownloadHistory() {
   const container = $("#downloadHistory");
@@ -267,6 +285,20 @@ function renderApps() {
   });
 }
 
+function ensurePremiumDialog() {
+  if (document.querySelector("#premiumDialog")) return;
+  const dialog = document.createElement("dialog"); dialog.id = "premiumDialog";
+  dialog.innerHTML = `<button class="close" id="closePremium">✕</button><h2>IFAL57_WRT Premium</h2><p class="section-sub"><strong>Rp25.000 · Sekali bayar · Lifetime</strong></p><div style="text-align:center"><img src="/qris.png" alt="QRIS IFAL57 STORE" style="width:min(100%,300px);border-radius:12px;background:white"><p>Scan QRIS di atas untuk membayar Rp25.000.</p></div><p id="premiumStatus" class="message">Login untuk mengajukan aktivasi Premium.</p><button class="primary" id="requestPayment">Saya sudah membayar</button><p class="section-sub">Aktivasi dilakukan admin setelah pembayaran diverifikasi.</p>`;
+  document.body.appendChild(dialog);
+  dialog.querySelector("#closePremium").addEventListener("click", () => dialog.close());
+  dialog.querySelector("#requestPayment").addEventListener("click", async () => {
+    const button = dialog.querySelector("#requestPayment"); button.disabled = true; button.textContent = "Mengirim...";
+    try { const result = await request("/api/customer/payment-request", { method: "POST" }); dialog.querySelector("#premiumStatus").textContent = result.payment ? `Permintaan pembayaran ${result.payment.status === "pending" ? "sudah dikirim dan menunggu verifikasi admin" : result.payment.status}.` : "Permintaan terkirim."; button.textContent = "Permintaan terkirim"; }
+    catch (error) { dialog.querySelector("#premiumStatus").textContent = error.message; button.disabled = false; button.textContent = "Saya sudah membayar"; }
+  });
+}
+function openPremiumDialog() { ensurePremiumDialog(); const dialog = $("#premiumDialog"); dialog.showModal(); }
+
 function setCustomerMessage(message, type = "info") {
   const node = $("#customerMessage");
   node.textContent = message; node.className = `message ${type}`;
@@ -277,7 +309,7 @@ function renderCustomerAccount() {
   if (!customerAccount) { bar.hidden = true; $("#userBtn").textContent = "Login / Daftar"; return; }
   bar.hidden = false;
   const status = customerAccount.plan === "lifetime" ? "PREMIUM PERMANEN" : customerAccount.plan === "trial" ? `TRIAL sampai ${new Date(customerAccount.trialEndsAt).toLocaleDateString("id-ID")}` : "TRIAL BERAKHIR";
-  bar.innerHTML = `<div><strong>${esc(customerAccount.email)}</strong><small>${esc(status)}</small></div><button type="button" id="customerLogout" class="text-button">Keluar</button>`;
+  bar.innerHTML = `<div><strong>${esc(customerAccount.email)}</strong><small>${esc(status)}</small></div>${customerAccount.plan === "expired" ? `<button type="button" id="openPremium" class="primary">Premium Rp25.000</button>` : ""}<button type="button" id="customerLogout" class="text-button">Keluar</button>`;
   $("#userBtn").textContent = customerAccount.plan === "lifetime" ? "Premium aktif" : "Akun saya";
 }
 
@@ -297,7 +329,13 @@ function openCustomerDialog(mode = "login") {
   userDialog.showModal();
 }
 
-$("#userBtn").addEventListener("click", () => openCustomerDialog(customerAccount ? "login" : "login"));
+$("#userBtn").addEventListener("click", () => openCustomerDialog("login"));
+document.addEventListener("click", async (event) => {
+  if (event.target.closest("#openPremium")) openPremiumDialog();
+  if (event.target.closest("#refreshPayments")) loadPaymentRequests();
+  const approve = event.target.closest("[data-approve-payment]");
+  if (approve) { approve.disabled = true; try { await request(`/api/admin/payments/${encodeURIComponent(approve.dataset.approvePayment)}/approve`, { method: "POST" }); await loadPaymentRequests(); await loadApps(); setMessage("Pembayaran disetujui dan akun menjadi Lifetime.", "success"); } catch (error) { approve.disabled = false; setMessage(error.message, "error"); } }
+});
 $("#closeUserDialog").addEventListener("click", () => userDialog.close());
 $("#toggleCustomerMode").addEventListener("click", () => openCustomerDialog(customerMode === "login" ? "register" : "login"));
 $("#customerForm").addEventListener("submit", async (event) => {
