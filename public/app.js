@@ -51,8 +51,29 @@ function formatSize(bytes) {
   return `${Math.max(1, Math.round(size / 1024))} KB`;
 }
 
+function getDeviceId() {
+  // Di aplikasi Android TV, ID berasal dari ANDROID_ID melalui bridge native.
+  try {
+    if (window.IFALDevice && typeof window.IFALDevice.getDeviceId === "function") {
+      const nativeId = String(window.IFALDevice.getDeviceId() || "").trim();
+      if (nativeId) return nativeId;
+    }
+  } catch (_) {}
+  // Untuk browser biasa, gunakan ID instalasi persisten (bukan hardware ID).
+  const key = "ifal57_device_id_v1";
+  let id = "";
+  try { id = localStorage.getItem(key) || ""; } catch (_) {}
+  if (!/^[a-zA-Z0-9._:-]{12,200}$/.test(id)) {
+    id = "web-" + (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    try { localStorage.setItem(key, id); } catch (_) {}
+  }
+  return id;
+}
+
 async function request(url, options = {}) {
-  const response = await fetch(url, options);
+  const headers = new Headers(options.headers || {});
+  headers.set("X-Device-ID", getDeviceId());
+  const response = await fetch(url, { ...options, headers });
   const raw = await response.text();
   let data = {};
   try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
@@ -189,7 +210,7 @@ async function loadPaymentRequests() {
     const payments = Array.isArray(data.payments) ? data.payments : [];
     const pending = payments.filter(p => p.status === "pending");
     if (!payments.length) { container.innerHTML = '<p class="dashboard-empty">Belum ada permintaan pembayaran.</p>'; return; }
-    container.innerHTML = payments.map(p => `<div class="history-row"><div class="history-info"><strong>${esc(p.email)}</strong><small>Rp${Number(p.amount || 25000).toLocaleString("id-ID")} · ${esc(new Date(p.createdAt).toLocaleString("id-ID"))}</small></div><span class="history-status">${p.status === "approved" ? "Lifetime aktif" : "Menunggu"}</span>${p.status === "pending" ? `<button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button>` : ""}</div>`).join("");
+    container.innerHTML = payments.map(p => `<div class="history-row"><div class="history-info"><strong>${esc(p.email)}</strong><small>Rp${Number(p.amount || 25000).toLocaleString("id-ID")} · ${esc(new Date(p.createdAt).toLocaleString("id-ID"))}<br>Device ID: ${esc(p.deviceId || "Belum tercatat")}</small></div><span class="history-status">${p.status === "approved" ? "Lifetime aktif" : "Menunggu"}</span>${p.status === "pending" ? `<button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button>` : ""}<button type="button" class="text-button" data-reset-device="${esc(p.userId)}">Reset perangkat</button></div>`).join("");
   } catch (error) { container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Permintaan tidak dapat dimuat.")}</p>`; }
 }
 
@@ -344,6 +365,13 @@ document.addEventListener("click", async (event) => {
   if (event.target.closest("#refreshPayments")) loadPaymentRequests();
   const approve = event.target.closest("[data-approve-payment]");
   if (approve) { approve.disabled = true; try { await request(`/api/admin/payments/${encodeURIComponent(approve.dataset.approvePayment)}/approve`, { method: "POST" }); await loadPaymentRequests(); await loadApps(); setMessage("Pembayaran disetujui dan akun menjadi Lifetime.", "success"); } catch (error) { approve.disabled = false; setMessage(error.message, "error"); } }
+  const reset = event.target.closest("[data-reset-device]");
+  if (reset) {
+    if (!confirm("Reset ikatan perangkat akun ini? Akun akan terikat ke perangkat berikutnya saat login.")) return;
+    reset.disabled = true;
+    try { await request(`/api/admin/users/${encodeURIComponent(reset.dataset.resetDevice)}/reset-device`, { method: "POST" }); await loadPaymentRequests(); setMessage("Ikatan perangkat direset. Login berikutnya akan mengikat perangkat baru.", "success"); }
+    catch (error) { reset.disabled = false; setMessage(error.message, "error"); }
+  }
 });
 $("#closeUserDialog").addEventListener("click", () => userDialog.close());
 $("#toggleCustomerMode").addEventListener("click", () => openCustomerDialog(customerMode === "login" ? "register" : "login"));
