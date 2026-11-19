@@ -677,3 +677,74 @@ dialog{
     padding:18px 14px 26px;
   }
 }
+
+
+/* IFAL57_WRT TV/STB mode — large-screen layout and visible remote focus */
+.tv-mode body{background:#f6faf8}
+.tv-mode .topbar{min-height:82px;padding:0 34px}
+.tv-mode .brandmark{width:54px;height:54px;font-size:23px}
+.tv-mode .brandcopy strong{font-size:20px}
+.tv-mode .brandcopy small{font-size:11px}
+.tv-mode .admin-button{padding:13px 20px;font-size:15px}
+.tv-mode main{max-width:1440px;padding:34px 38px 64px}
+.tv-mode .hero{min-height:300px;padding:42px 48px;border-radius:26px}
+.tv-mode .eyebrow{font-size:14px;letter-spacing:2.5px}
+.tv-mode .hero h1{font-size:clamp(48px,4vw,64px)}
+.tv-mode .hero p{font-size:20px;max-width:760px}
+.tv-mode .hero-tags span{font-size:13px;padding:10px 16px}
+.tv-mode .sectionhead{margin:44px 0 24px}
+.tv-mode .sectionhead h2{font-size:36px}
+.tv-mode .section-sub{font-size:18px}
+.tv-mode .searchbox{width:min(100%,460px);padding:0 20px}
+.tv-mode .searchbox input{font-size:19px;padding:18px 0}
+.tv-mode .catalog-stats{font-size:16px;margin-bottom:20px}
+.tv-mode .apps{grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:20px}
+.tv-mode .app{padding:24px;border-radius:20px}
+.tv-mode .app-topline{gap:18px;min-height:84px}
+.tv-mode .app-icon{width:76px;height:76px;flex-basis:76px;border-radius:19px}
+.tv-mode .app-title h3{font-size:22px}
+.tv-mode .app-title p{font-size:15px}
+.tv-mode .app-meta{margin-top:20px;gap:10px}
+.tv-mode .meta-pill{padding:10px 13px}
+.tv-mode .meta-pill small{font-size:10px}
+.tv-mode .meta-pill strong{font-size:14px}
+.tv-mode .app-actions{margin-top:20px}
+.tv-mode .download,.tv-mode .delete-button{padding:14px 20px;font-size:16px}
+.tv-mode footer{max-width:1440px;font-size:15px;padding:28px 38px}
+.tv-mode .account-bar{padding:18px 22px;font-size:17px}
+.tv-mode .account-bar strong{font-size:18px}
+.tv-mode .account-bar small{font-size:14px}
+.tv-mode dialog{width:min(80vw,650px);padding:34px;border-radius:24px}
+.tv-mode dialog h2{font-size:30px}
+.tv-mode dialog label{font-size:16px}
+.tv-mode dialog label input{padding:16px;font-size:17px}
+.tv-mode .primary{padding:16px;font-size:17px}
+
+/* Clear focus ring for Android TV remotes, keyboard and accessibility */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:3px solid #0f766e;
+  outline-offset:4px;
+  box-shadow:0 0 0 6px #0f766e22;
+}
+.tv-mode :where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:4px solid #0f766e;
+  outline-offset:5px;
+  box-shadow:0 0 0 9px #0f766e25,0 8px 22px #0f766e22;
+}
+.tv-mode .download:focus-visible,.tv-mode .admin-button:focus-visible,
+.tv-mode .primary:focus-visible,.tv-mode .delete-button:focus-visible{
+  background:#115e59;
+  color:#fff;
+}
+.tv-mode .app:focus-within{
+  border-color:#0f766e;
+  box-shadow:0 0 0 3px #0f766e24,0 12px 28px #153f3520;
+}
+@media (min-width:760px) and (hover:none) and (pointer:coarse){
+  .hero-art{opacity:.82}
+  .apps{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+}
+@media (max-width:759px){
+  .tv-mode main{padding:18px 14px 42px}
+  .tv-mode .topbar{min-height:66px;padding:0 14px}
+}

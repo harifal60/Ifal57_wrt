@@ -620,3 +620,75 @@ refreshCustomer().then(() => {
   } else if (params.has("login")) openCustomerDialog("login");
   if (params.has("trial")) { openCustomerDialog("login"); setCustomerMessage("Masa trial sudah berakhir. Login untuk melihat status akun dan informasi Premium.", "error"); }
 });
+
+
+/* Remote-control directional navigation. Activated only in TV/STB mode. */
+(() => {
+  const ua = navigator.userAgent || "";
+  const coarseLargeScreen = window.matchMedia("(min-width: 900px) and (hover: none)").matches;
+  const tvUA = /Android TV|GoogleTV|AFT[A-Z0-9]*|BRAVIA|SHIELD Android TV|MiTV/i.test(ua);
+  if (!tvUA && !coarseLargeScreen) return;
+
+  document.documentElement.classList.add("tv-mode");
+
+  const selector = [
+    "a[href]", "button:not([disabled])", "input:not([disabled]):not([type=hidden])",
+    "select:not([disabled])", "textarea:not([disabled])", "[tabindex]:not([tabindex='-1'])"
+  ].join(",");
+
+  function visible(el) {
+    if (!el || !el.isConnected || el.closest("[hidden], [inert]")) return false;
+    const style = getComputedStyle(el);
+    return style.visibility !== "hidden" && style.display !== "none" &&
+      el.getClientRects().length > 0;
+  }
+
+  document.addEventListener("keydown", (event) => {
+    const directions = {
+      ArrowUp: [0, -1], ArrowDown: [0, 1],
+      ArrowLeft: [-1, 0], ArrowRight: [1, 0]
+    };
+    const direction = directions[event.key];
+    if (!direction || event.altKey || event.ctrlKey || event.metaKey) return;
+
+    const active = document.activeElement;
+    if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
+
+    const items = [...document.querySelectorAll(selector)].filter(visible);
+    if (!items.length) return;
+
+    if (!items.includes(active)) {
+      event.preventDefault();
+      items[0].focus();
+      return;
+    }
+
+    const [dx, dy] = direction;
+    const current = active.getBoundingClientRect();
+    const cx = current.left + current.width / 2;
+    const cy = current.top + current.height / 2;
+    let best = null;
+    let bestScore = Infinity;
+
+    for (const item of items) {
+      if (item === active) continue;
+      const rect = item.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const primary = dx ? (x - cx) * dx : (y - cy) * dy;
+      if (primary <= 2) continue;
+      const cross = dx ? Math.abs(y - cy) : Math.abs(x - cx);
+      const score = primary + cross * 2.25;
+      if (score < bestScore) {
+        bestScore = score;
+        best = item;
+      }
+    }
+
+    if (best) {
+      event.preventDefault();
+      best.focus({ preventScroll: true });
+      best.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    }
+  });
+})();
