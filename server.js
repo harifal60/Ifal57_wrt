@@ -145,7 +145,15 @@ app.get("/api/me", (req, res) =>
 
 app.get("/api/apps", (req, res) => {
   const isAdminLoggedIn = !!req.session.admin;
-  const apps = readCatalog().map(item => ({
+  const apps = readCatalog()
+    .slice()
+    .sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || ""), "id", {
+        sensitivity: "base",
+        numeric: true
+      })
+    )
+    .map(item => ({
     id: item.id,
     name: item.name,
     version: item.version,
