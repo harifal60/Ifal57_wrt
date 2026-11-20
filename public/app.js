@@ -224,6 +224,14 @@ function renderApps() {
   const filtered = catalogItems.filter((item) =>
     `${item.name || ""} ${item.description || ""} ${item.version || ""}`.toLocaleLowerCase("id").includes(query)
   );
+  const sortMode = $("#sortApps")?.value || "newest";
+  const sorted = filtered.slice().sort((a, b) => {
+    if (sortMode === "popular") return (Number(b.downloads) || 0) - (Number(a.downloads) || 0);
+    if (sortMode === "az") return String(a.name || "").localeCompare(String(b.name || ""), "id", { sensitivity: "base", numeric: true });
+    const dateA = new Date(a.updatedAt || a.createdAt || 0).getTime() || 0;
+    const dateB = new Date(b.updatedAt || b.createdAt || 0).getTime() || 0;
+    return dateB - dateA;
+  });
 
   ensureCatalogStats();
   const recentlyUpdated = catalogItems.filter(item => item.isUpdate);
@@ -259,7 +267,7 @@ function renderApps() {
     return;
   }
 
-  $("#apps").innerHTML = filtered.map((item) => {
+  $("#apps").innerHTML = sorted.map((item) => {
     const icon = appIcon(item.name);
     const description = item.description || "Aplikasi Android untuk perangkat Anda.";
     return `<article class="app">
@@ -575,6 +583,7 @@ document.addEventListener("click", (event) => {
 });
 $("#closeDialog").addEventListener("click", () => dialog.close());
 $("#search").addEventListener("input", renderApps);
+$("#sortApps")?.addEventListener("change", renderApps);
 
 $("#authForm").addEventListener("submit", async (event) => {
   event.preventDefault();
