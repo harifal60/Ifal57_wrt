@@ -82,7 +82,7 @@ function customerStatus(user) {
   if (!user) return null;
   const end = new Date(user.trialEndsAt).getTime();
   const activeTrial = user.plan !== "lifetime" && Number.isFinite(end) && Date.now() < end;
-  return { email: user.email, plan: user.plan === "lifetime" ? "lifetime" : activeTrial ? "trial" : "expired", trialEndsAt: user.trialEndsAt, canDownload: user.plan === "lifetime" || activeTrial, deviceBound: !!user.deviceId };
+  return { email: user.email, plan: user.plan === "lifetime" ? "lifetime" : activeTrial ? "trial" : "expired", trialEndsAt: user.trialEndsAt, createdAt: user.createdAt, canDownload: user.plan === "lifetime" || activeTrial, deviceBound: !!user.deviceId };
 }
 function requestDeviceId(req) {
   return String(req.get("X-Device-ID") || req.body?.deviceId || "").trim().slice(0, 200);
@@ -374,6 +374,21 @@ app.get("/api/customer/me", (req, res) => {
   res.json({ account: customerStatus(user) });
 });
 
+app.get("/api/customer/history", (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: "Login terlebih dahulu." });
+  let events = [];
+  try {
+    events = JSON.parse(fs.readFileSync(DOWNLOAD_EVENTS_FILE, "utf8"));
+    if (!Array.isArray(events)) events = [];
+  } catch (_) {}
+  const history = events
+    .filter(event => event && event.userId === req.session.userId)
+    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+    .slice(0, 20)
+    .map(event => ({ appName: event.appName, date: event.date }));
+  res.json({ history });
+});
+
 app.post("/api/logout", (req, res) =>
   req.session.destroy(() => res.json({ ok: true }))
 );
@@ -655,6 +670,7 @@ app.get("/download/:id", requireCustomer, (req, res) => {
         appId: latestItem.id,
         appName: latestItem.name,
         date: new Date().toISOString(),
+        ...(req.session.userId ? { userId: req.session.userId } : {}),
         ...(requestId ? { requestId } : {})
       });
       fs.writeFileSync(DOWNLOAD_EVENTS_FILE, JSON.stringify(events));
