@@ -816,3 +816,30 @@ refreshCustomer().then(() => {
     }
   });
 })();
+
+
+// Pengaturan tema 57 Store: tersimpan lokal dan tidak mengubah data akun/katalog.
+(() => {
+  const button = document.getElementById('themeToggle');
+  if (!button) return;
+  const root = document.documentElement;
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  const storageKey = 'ifal57_theme_v1';
+  let saved = 'light';
+  try { saved = localStorage.getItem(storageKey) === 'dark' ? 'dark' : 'light'; } catch (_) {}
+  const applyTheme = (theme) => {
+    const dark = theme === 'dark';
+    root.dataset.theme = dark ? 'dark' : 'light';
+    button.textContent = dark ? '☀️' : '🌙';
+    button.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    button.setAttribute('aria-label', dark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap');
+    button.title = dark ? 'Mode terang' : 'Mode gelap';
+    if (metaTheme) metaTheme.setAttribute('content', dark ? '#0b1214' : '#031b1a');
+  };
+  applyTheme(saved);
+  button.addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem(storageKey, next); } catch (_) {}
+  });
+})();

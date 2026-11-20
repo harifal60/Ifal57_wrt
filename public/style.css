@@ -1069,3 +1069,49 @@ body.customer-logged-in #catalog{margin-top:24px}
 .catalog-update-notice[hidden] { display: none; }
 .catalog-update-notice strong { font-weight: 750; }
 .catalog-update-notice span { color: #476b68; line-height: 1.45; }
+
+
+/* 57 Store — Dark Mode (pilihan pengguna, tersimpan di perangkat) */
+.theme-toggle{min-width:42px;padding:9px 11px!important;font-size:16px!important;line-height:1}
+html[data-theme="dark"]{color-scheme:dark;background:#0b1214;color:#e5eeee}
+html[data-theme="dark"] body{background:radial-gradient(ellipse at 8% 0%,#12302d 0,transparent 32%),radial-gradient(ellipse at 95% 22%,#142725 0,transparent 28%),#0b1214;color:#e5eeee}
+html[data-theme="dark"] .topbar{background:#101b1bed;border-color:#263b39;box-shadow:0 5px 22px #0005}
+html[data-theme="dark"] .brandcopy strong{color:#e4f3f0}
+html[data-theme="dark"] .brandcopy small{color:#8fa9a5}
+html[data-theme="dark"] .admin-button{background:#172624;border-color:#34504c;color:#d9e9e6;box-shadow:none}
+html[data-theme="dark"] .admin-button:hover{background:#203a36;border-color:#00a99a}
+html[data-theme="dark"] .hero{background:linear-gradient(115deg,#142d2a,#14211f 52%,#19332f);border-color:#31534d;box-shadow:0 20px 55px #0005}
+html[data-theme="dark"] .hero h1{color:#e6f2ef}
+html[data-theme="dark"] .hero p{color:#a8bfba}
+html[data-theme="dark"] .hero-tags span{background:#1a3430;border-color:#345650;color:#b9d5cf}
+html[data-theme="dark"] .floating-chip{background:#172b28;border-color:#34564f;color:#b9d5cf}
+html[data-theme="dark"] .sectionhead h2{color:#e3f0ed}
+html[data-theme="dark"] .section-sub,html[data-theme="dark"] .catalog-stats{color:#91aaa5}
+html[data-theme="dark"] .searchbox{background:#142220;border-color:#34504b;color:#65c8bc;box-shadow:none}
+html[data-theme="dark"] .searchbox input{color:#e5eeee}
+html[data-theme="dark"] .searchbox input::placeholder{color:#78928c}
+html[data-theme="dark"] .app{background:linear-gradient(150deg,#172523,#121e1c)!important;border-color:#2c4540!important;box-shadow:0 8px 24px #0004!important;color:#e3eeeb}
+html[data-theme="dark"] .app h3,html[data-theme="dark"] .app h2,html[data-theme="dark"] .app strong{color:#e5f0ed}
+html[data-theme="dark"] .app p,html[data-theme="dark"] .app small,html[data-theme="dark"] .app .muted{color:#9db4ae}
+html[data-theme="dark"] .app button:not(.primary){background:#203632;border-color:#3b5a53;color:#d9e9e5}
+html[data-theme="dark"] .catalog-update-notice{background:#15312c;border-color:#28665a;color:#bce9dd}
+html[data-theme="dark"] .catalog-update-notice span{color:#9ec9bd}
+html[data-theme="dark"] footer{border-color:#293e3a;color:#8da49e}
+html[data-theme="dark"] .footer-brand{color:#c1d5d0}
+html[data-theme="dark"] dialog,html[data-theme="dark"] .about-dialog{background:#14211f!important;border-color:#34504a!important;color:#dce9e5!important;box-shadow:0 28px 90px #0009}
+html[data-theme="dark"] dialog h2,html[data-theme="dark"] .about-dialog h2,html[data-theme="dark"] .about-dialog h3{color:#e6f2ef}
+html[data-theme="dark"] dialog label,html[data-theme="dark"] .about-dialog p,html[data-theme="dark"] .about-section p,html[data-theme="dark"] .about-feature-list{color:#a9beb8}
+html[data-theme="dark"] dialog input,html[data-theme="dark"] dialog textarea,html[data-theme="dark"] dialog select{background:#0e1917!important;border-color:#34504a!important;color:#e5eeee!important}
+html[data-theme="dark"] dialog input::placeholder{color:#78918a}
+html[data-theme="dark"] dialog .close,html[data-theme="dark"] .about-dialog>.close{background:#1b302c;border-color:#3a5750;color:#d6e7e2}
+html[data-theme="dark"] .about-section,html[data-theme="dark"] .about-support,html[data-theme="dark"] .about-device{border-color:#2d4640}
+html[data-theme="dark"] .about-label,html[data-theme="dark"] .about-kicker{color:#6bd1c2}
+html[data-theme="dark"] .about-telegram{color:#78d8cb}
+html[data-theme="dark"] .about-close-button,html[data-theme="dark"] .primary{background:linear-gradient(135deg,#087e75,#075e57);color:#fff;border-color:#168f83}
+html[data-theme="dark"] .text-button{color:#75d5c8}
+html[data-theme="dark"] .admin-shortcut,html[data-theme="dark"] .dashboard-stat,html[data-theme="dark"] .admin-more,html[data-theme="dark"] .admin-upload-area{background:#192b28!important;border-color:#34504a!important;color:#dce9e5!important}
+html[data-theme="dark"] .stats-heading h4,html[data-theme="dark"] .dashboard-stat strong,html[data-theme="dark"] .admin-more summary{color:#dce9e5!important}
+html[data-theme="dark"] .dashboard-stat span,html[data-theme="dark"] .admin-shortcut small{color:#9db4ae!important}
+html[data-theme="dark"] .dashboard-refresh{background:#203632!important;border-color:#3b5a53!important;color:#d9e9e5!important}
+html[data-theme="dark"] .catalog-update-notice[hidden]{display:none!important}
+@media(max-width:600px){.theme-toggle{min-width:36px;padding:8px!important}.top-actions{gap:4px}}
