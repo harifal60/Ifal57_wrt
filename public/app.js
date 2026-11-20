@@ -226,6 +226,22 @@ function renderApps() {
   );
 
   ensureCatalogStats();
+  const recentlyUpdated = catalogItems.filter(item => item.isUpdate);
+  let updateNotice = document.querySelector("#catalogUpdateNotice");
+  if (!updateNotice) {
+    updateNotice = document.createElement("aside");
+    updateNotice.id = "catalogUpdateNotice";
+    updateNotice.className = "catalog-update-notice";
+    updateNotice.setAttribute("aria-live", "polite");
+    const statsNode = document.querySelector("#catalogStats");
+    if (statsNode) statsNode.insertAdjacentElement("afterend", updateNotice);
+  }
+  if (updateNotice) {
+    updateNotice.hidden = recentlyUpdated.length === 0;
+    updateNotice.innerHTML = recentlyUpdated.length
+      ? `<strong>🔔 Ada ${recentlyUpdated.length} aplikasi diperbarui</strong><span>${recentlyUpdated.slice(0, 3).map(item => `${esc(item.name)} · v${esc(item.version)}`).join("  •  ")}${recentlyUpdated.length > 3 ? `  •  +${recentlyUpdated.length - 3} lainnya` : ""}</span>`
+      : "";
+  }
   const totalDownloads = catalogItems.reduce((total, item) => total + (Number(item.downloads) || 0), 0);
   const downloadSummary = loggedIn
     ? ` • ${totalDownloads.toLocaleString("id-ID")} total unduhan`

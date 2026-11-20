@@ -1051,3 +1051,21 @@ body.customer-logged-in #catalog{margin-top:24px}
 @media(max-width:600px){
   .brandmark{width:44px;height:44px;font-size:21px}
 }
+
+
+/* Pemberitahuan aplikasi yang baru diperbarui */
+.catalog-update-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0 16px;
+  padding: 13px 15px;
+  border: 1px solid rgba(15, 118, 110, .18);
+  border-radius: 14px;
+  background: #effaf7;
+  color: #115e59;
+  font-size: .9rem;
+}
+.catalog-update-notice[hidden] { display: none; }
+.catalog-update-notice strong { font-weight: 750; }
+.catalog-update-notice span { color: #476b68; line-height: 1.45; }
