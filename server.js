@@ -92,8 +92,10 @@ function customerStatus(user) {
   return { email: user.email, plan, trialEndsAt: user.trialEndsAt, premiumExpiresAt: user.premiumExpiresAt || null, createdAt: user.createdAt, canDownload: legacyLifetime || activePremium || activeTrial, deviceBound: !!user.deviceId };
 }
 function isNativeAppRequest(req) {
-  // Header ini hanya dikirim ketika Android WebView memiliki bridge native.
-  return req.get("X-IFAL-Client") === "android-app";
+  // Utamakan header dari JavaScript; User-Agent menjadi fallback untuk WebView Android.
+  const clientHeader = String(req.get("X-IFAL-Client") || "").toLowerCase();
+  const userAgent = String(req.get("user-agent") || "");
+  return clientHeader === "android-app" || /IFAL57AndroidApp/i.test(userAgent);
 }
 function requestDeviceId(req) {
   // Android WebView supplies the native ANDROID_ID; ordinary browsers supply
