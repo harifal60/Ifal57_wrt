@@ -109,11 +109,14 @@ function validDeviceId(value) {
 function deviceMismatch(user, deviceId) {
   return !!(user.deviceId && user.deviceId !== deviceId);
 }
+function boundDeviceForMode(user, mode) {
+  if (mode === "android-app") return user.appDeviceId || (user.deviceMode === "android-app" ? user.deviceId : null);
+  return user.browserDeviceId || (user.deviceMode === "browser" ? user.deviceId : null);
+}
 function deviceAlreadyUsedByAnotherAccount(users, deviceId, currentUserId = null) {
   return users.some(user =>
     user.id !== currentUserId &&
-    user.deviceId &&
-    user.deviceId === deviceId
+    [user.deviceId, user.browserDeviceId, user.appDeviceId, user.pendingAppAccess?.deviceId].includes(deviceId)
   );
 }
 function requireCustomer(req, res, next) {
@@ -126,7 +129,8 @@ function requireCustomer(req, res, next) {
   if (!req.session.userId) return res.redirect("/?login=1");
   const user = readUsers().find(item => item.id === req.session.userId);
   if (!user) { req.session.userId = null; return res.redirect("/?login=1"); }
-  if (!isNativeAppRequest(req) || !user.deviceId || !req.session.deviceId || deviceMismatch(user, req.session.deviceId)) return res.status(403).send("Download APK hanya dapat dilakukan dari aplikasi Android yang terikat ke akun ini.");
+  const appDeviceId = boundDeviceForMode(user, "android-app");
+  if (!isNativeAppRequest(req) || !appDeviceId || !req.session.deviceId || appDeviceId !== req.session.deviceId) return res.status(403).send("Download APK hanya dapat dilakukan dari aplikasi Android yang sudah disetujui dan terikat ke akun ini.");
   if (!customerStatus(user).canDownload) return res.redirect("/?trial=expired");
   req.customer = user;
   next();
@@ -230,6 +234,8 @@ app.post("/api/customer/register", async (req, res) => {
   user.deviceId = deviceId;
   user.deviceMode = deviceMode;
   user.deviceBoundAt = new Date(now).toISOString();
+  if (deviceMode === "android-app") user.appDeviceId = deviceId;
+  else user.browserDeviceId = deviceId;
   users.push(user); writeUsers(users);
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
@@ -248,20 +254,50 @@ app.post("/api/customer/login", async (req, res) => {
   const users = readUsers();
   const user = users.find(item => item.email === email);
   if (!user || !(await bcrypt.compare(password, user.hash))) return res.status(401).json({ error: "Email atau password salah." });
+  // Login berhasil mengembalikan akun ke daftar pengguna admin.
+  if (user.hiddenFromAdmin) {
+    delete user.hiddenFromAdmin;
+    delete user.hiddenFromAdminAt;
+    writeUsers(users);
+  }
   if (deviceAlreadyUsedByAnotherAccount(users, deviceId, user.id)) {
     return res.status(403).json({ error: "ID perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin untuk persetujuan reset perangkat." });
   }
-  // Lock both the device identity and the login channel. Switching between
-  // Android app and browser requires an administrator reset/approval.
-  const savedMode = user.deviceMode || (String(user.deviceId || "").startsWith("web-") ? "browser" : (user.deviceId ? "android-app" : ""));
-  if (user.deviceId && (deviceMismatch(user, deviceId) || savedMode !== deviceMode)) {
-    return res.status(403).json({ error: "Akun ini sudah terikat ke perangkat atau jalur login lain. Perpindahan aplikasi ↔ browser harus mendapat persetujuan admin. Hubungi admin untuk reset perangkat." });
-  }
-  if (!user.deviceId) {
-    user.deviceId = deviceId;
-    user.deviceMode = deviceMode;
-    user.deviceBoundAt = new Date().toISOString();
-    writeUsers(users);
+  // Browser dan Android boleh memakai akun yang sama. Akun yang awalnya dibuat
+  // di browser wajib meminta persetujuan admin sebelum login pertama di Android.
+  if (deviceMode === "android-app") {
+    const appDeviceId = boundDeviceForMode(user, "android-app");
+    const browserDeviceId = boundDeviceForMode(user, "browser");
+    if (!appDeviceId && browserDeviceId) {
+      user.pendingAppAccess = { deviceId, requestedAt: new Date().toISOString() };
+      writeUsers(users);
+      return res.status(403).json({ error: "Permintaan login aplikasi sudah dikirim. Silakan tunggu persetujuan admin IFAL57_WRT." });
+    }
+    if (appDeviceId && appDeviceId !== deviceId) {
+      user.pendingAppAccess = { deviceId, requestedAt: new Date().toISOString() };
+      writeUsers(users);
+      return res.status(403).json({ error: "Perangkat Android baru memerlukan persetujuan admin. Permintaan sudah dikirim." });
+    }
+    if (!appDeviceId) {
+      user.appDeviceId = deviceId;
+      user.deviceId = deviceId;
+      user.deviceMode = "android-app";
+      user.deviceBoundAt = new Date().toISOString();
+      writeUsers(users);
+    }
+  } else {
+    const browserDeviceId = boundDeviceForMode(user, "browser");
+    const appDeviceId = boundDeviceForMode(user, "android-app");
+    if (browserDeviceId && browserDeviceId !== deviceId) {
+      return res.status(403).json({ error: "Akun ini sudah terikat ke browser lain. Hubungi admin untuk reset perangkat." });
+    }
+    if (!browserDeviceId && !appDeviceId) {
+      user.browserDeviceId = deviceId;
+      user.deviceId = deviceId;
+      user.deviceMode = "browser";
+      user.deviceBoundAt = new Date().toISOString();
+      writeUsers(users);
+    }
   }
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
@@ -360,13 +396,15 @@ app.post("/api/customer/payment-request", (req, res) => {
   const payments = readPayments();
   const pending = payments.find(item => item.userId === user.id && item.status === "pending");
   if (pending) return res.json({ ok: true, payment: pending });
-  if (!isNativeAppRequest(req) || !user.deviceId || !req.session.deviceId || deviceMismatch(user, req.session.deviceId)) return res.status(403).json({ error: "Permintaan Premium hanya dapat dilakukan dari aplikasi Android yang terikat ke akun ini." });
-  const payment = { id: crypto.randomUUID(), userId: user.id, email: user.email, deviceId: user.deviceId, amount: PREMIUM_PRICE, durationDays: PREMIUM_DAYS, status: "pending", createdAt: new Date().toISOString() };
+  const appDeviceId = boundDeviceForMode(user, "android-app");
+  if (!isNativeAppRequest(req) || !appDeviceId || !req.session.deviceId || appDeviceId !== req.session.deviceId) return res.status(403).json({ error: "Permintaan Premium hanya dapat dilakukan dari aplikasi Android yang sudah disetujui admin." });
+  const payment = { id: crypto.randomUUID(), userId: user.id, email: user.email, deviceId: appDeviceId, amount: PREMIUM_PRICE, durationDays: PREMIUM_DAYS, status: "pending", createdAt: new Date().toISOString() };
   payments.push(payment); writePayments(payments);
   res.json({ ok: true, payment });
 });
 app.get("/api/admin/users", isAdmin, (req, res) => {
-  const users = readUsers().map(user => ({
+  // Akun yang disembunyikan admin tidak ditampilkan sampai pemilik login kembali.
+  const users = readUsers().filter(user => !user.hiddenFromAdmin).map(user => ({
     id: user.id,
     email: user.email,
     plan: customerStatus(user).plan,
@@ -374,7 +412,11 @@ app.get("/api/admin/users", isAdmin, (req, res) => {
     createdAt: user.createdAt || null,
     deviceId: user.deviceId || null,
     deviceMode: user.deviceMode || (String(user.deviceId || "").startsWith("web-") ? "browser" : (user.deviceId ? "android-app" : null)),
-    deviceBoundAt: user.deviceBoundAt || null
+    deviceBoundAt: user.deviceBoundAt || null,
+    appAccessPending: !!user.pendingAppAccess,
+    appAccessDeviceId: user.pendingAppAccess?.deviceId || null,
+    appAccessRequestedAt: user.pendingAppAccess?.requestedAt || null,
+    appAccessApproved: !!user.appDeviceId
   })).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   res.json({ users, total: users.length });
 });
@@ -407,6 +449,20 @@ app.post("/api/admin/payments/:id/reject", isAdmin, (req, res) => {
   res.json({ ok: true, payment });
 });
 
+app.post("/api/admin/users/:id/approve-app-access", isAdmin, (req, res) => {
+  const users = readUsers();
+  const user = users.find(item => item.id === req.params.id);
+  if (!user || !user.pendingAppAccess?.deviceId) return res.status(404).json({ error: "Permintaan akses aplikasi tidak ditemukan." });
+  const deviceId = user.pendingAppAccess.deviceId;
+  if (deviceAlreadyUsedByAnotherAccount(users, deviceId, user.id)) return res.status(409).json({ error: "Device ID ini sudah terikat ke akun lain." });
+  user.appDeviceId = deviceId;
+  user.appAccessApprovedAt = new Date().toISOString();
+  user.appAccessApprovedBy = req.session.admin;
+  delete user.pendingAppAccess;
+  writeUsers(users);
+  res.json({ ok: true, email: user.email, appDeviceId: deviceId });
+});
+
 app.post("/api/admin/users/:id/reset-device", isAdmin, (req, res) => {
   const users = readUsers();
   const user = users.find(item => item.id === req.params.id);
@@ -415,27 +471,28 @@ app.post("/api/admin/users/:id/reset-device", isAdmin, (req, res) => {
   delete user.deviceId;
   delete user.deviceMode;
   delete user.deviceBoundAt;
+  delete user.browserDeviceId;
+  delete user.appDeviceId;
+  delete user.pendingAppAccess;
+  delete user.appAccessApprovedAt;
+  delete user.appAccessApprovedBy;
   writeUsers(users);
   // Sesi lama tidak lagi dapat mengunduh; pemilik harus login ulang untuk mengikat perangkat baru.
   res.json({ ok: true, email: user.email, previousDeviceId });
 });
 
-// Hapus akun pelanggan beserta permintaan Premium yang terkait.
+// Sembunyikan akun dari daftar admin, tetapi pertahankan kredensial agar pemilik
+// tetap bisa login kembali dengan email dan password yang sama.
 app.delete("/api/admin/users/:id", isAdmin, (req, res) => {
   const users = readUsers();
-  const userIndex = users.findIndex(item => item.id === req.params.id);
-  if (userIndex === -1) return res.status(404).json({ error: "Akun tidak ditemukan." });
+  const user = users.find(item => item.id === req.params.id);
+  if (!user) return res.status(404).json({ error: "Akun tidak ditemukan." });
 
-  const [user] = users.splice(userIndex, 1);
+  user.hiddenFromAdmin = true;
+  user.hiddenFromAdminAt = new Date().toISOString();
   writeUsers(users);
 
-  const payments = readPayments();
-  const remainingPayments = payments.filter(item => item.userId !== user.id);
-  if (remainingPayments.length !== payments.length) writePayments(remainingPayments);
-
-  // Sesi pelanggan yang masih tersimpan tidak lagi dapat menemukan akun ini,
-  // sehingga endpoint pelanggan dan download akan menolak akses berikutnya.
-  res.json({ ok: true, email: user.email, removedPayments: payments.length - remainingPayments.length });
+  res.json({ ok: true, email: user.email, hidden: true, canLoginAgain: true });
 });
 
 app.post("/api/customer/logout", (req, res) => {
@@ -447,7 +504,8 @@ app.post("/api/customer/logout", (req, res) => {
 
 app.get("/api/customer/me", (req, res) => {
   const user = req.session.userId ? readUsers().find(item => item.id === req.session.userId) : null;
-  if (user && req.session.deviceId && (!user.deviceId || deviceMismatch(user, req.session.deviceId) || (user.deviceMode && req.session.deviceMode && user.deviceMode !== req.session.deviceMode))) {
+  const sessionBoundDevice = user ? boundDeviceForMode(user, req.session.deviceMode || "browser") : null;
+  if (user && req.session.deviceId && (!sessionBoundDevice || sessionBoundDevice !== req.session.deviceId)) {
     req.session.userId = null; req.session.deviceId = null;
     return res.status(403).json({ error: "Sesi perangkat tidak cocok. Silakan login kembali." });
   }
