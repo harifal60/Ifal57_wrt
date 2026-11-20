@@ -438,7 +438,7 @@ app.get("/api/apps", (req, res) => {
     iconUrl: item.iconFilename
       ? `/icons/${encodeURIComponent(path.basename(item.iconFilename))}`
       : null,
-    ...(isAdminLoggedIn ? { downloads: Number(item.downloads) || 0 } : {})
+    downloads: Number(item.downloads) || 0
   }));
   res.json(apps);
 });
