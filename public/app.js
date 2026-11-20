@@ -726,6 +726,34 @@ $("#logout").addEventListener("click", async () => {
   }
 });
 
+
+
+// About & customer support dialog
+(() => {
+  const aboutDialog = $("#aboutDialog");
+  const openButton = $("#aboutBtn");
+  if (!aboutDialog || !openButton) return;
+  const closeAbout = () => aboutDialog.close();
+  openButton.addEventListener("click", () => {
+    const ua = navigator.userAgent || "";
+    let device = "Perangkat tidak terdeteksi";
+    const android = ua.match(/Android\s([0-9.]+)/i);
+    const model = ua.match(/;\s*([^;)]+)\s*Build\//i);
+    if (android) device = `${model ? model[1].trim() + " · " : ""}Android ${android[1]}`;
+    else if (/Android/i.test(ua)) device = "Perangkat Android";
+    else if (/iPhone|iPad/i.test(ua)) device = "Perangkat iOS";
+    else if (/Windows/i.test(ua)) device = "Windows";
+    else if (/Macintosh/i.test(ua)) device = "macOS";
+    $("#aboutDeviceInfo").textContent = device;
+    aboutDialog.showModal();
+  });
+  $("#closeAboutDialog").addEventListener("click", closeAbout);
+  $("#aboutDone").addEventListener("click", closeAbout);
+  aboutDialog.addEventListener("click", (event) => {
+    if (event.target === aboutDialog) closeAbout();
+  });
+})();
+
 refreshCustomer().then(() => {
   loadApps();
   const params = new URLSearchParams(location.search);
