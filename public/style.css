@@ -748,3 +748,34 @@ dialog{
   .tv-mode main{padding:18px 14px 42px}
   .tv-mode .topbar{min-height:66px;padding:0 14px}
 }
+
+
+/* IFAL-WRT popup admin dashboard — compact responsive layout */
+.admin-dashboard{margin:14px 0 12px;padding:16px;border:1px solid #dcebe8;border-radius:18px;background:linear-gradient(160deg,#f8fcfb,#f1f7f8);box-shadow:0 8px 24px #164c5b0b}
+.popup-admin-brand{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+.popup-admin-brand h3{margin:3px 0;color:#17364a;font-size:21px;letter-spacing:-.4px}
+.popup-admin-brand p{margin:0;color:#718496;font-size:12px}
+.dashboard-kicker{display:block;color:#0b8176;font-size:9px;font-weight:800;letter-spacing:1.1px}
+.popup-admin-brand .dashboard-refresh{width:36px;height:36px;padding:0;font-size:18px}
+.admin-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 17px}
+.admin-shortcut{position:relative;display:flex;min-height:122px;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;padding:14px;border:0;border-radius:15px;color:#fff;text-align:left;box-shadow:0 7px 16px #0c746d20;cursor:pointer}
+.upload-shortcut{background:linear-gradient(135deg,#0c9b89,#08766e)}
+.premium-shortcut{background:linear-gradient(135deg,#0796b8,#08708f)}
+.shortcut-icon{display:grid;width:34px;height:34px;place-items:center;border-radius:11px;background:#ffffff25;font-size:23px;font-weight:800}
+.admin-shortcut strong{max-width:90%;font-size:14px;line-height:1.25}
+.admin-shortcut small{max-width:90%;color:#e3f7f5;font-size:10px}
+.shortcut-arrow{position:absolute;right:11px;top:50%;font-size:25px;transform:translateY(-50%)}
+.stats-heading{margin:0 2px 9px}.stats-heading h4{margin:0;color:#24445a;font-size:15px}
+.admin-dashboard .dashboard-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 12px}
+.admin-dashboard .dashboard-stat{padding:12px 8px;border:1px solid #e0ecea;border-radius:12px;background:#fff;text-align:center}
+.admin-dashboard .dashboard-stat span{display:block;color:#71869a;font-size:9px;line-height:1.35}
+.admin-dashboard .dashboard-stat strong{display:block;margin-top:6px;color:#087d73;font-size:21px}
+.admin-more{margin-top:10px;padding:12px;border:1px solid #e1ebe8;border-radius:12px;background:#fff}
+.admin-more summary{position:relative;padding-right:60px;color:#31556d;font-size:11px;font-weight:800;cursor:pointer;list-style:none}
+.admin-more summary::-webkit-details-marker{display:none}.admin-more summary:after{content:'＋';position:absolute;right:2px;top:0;color:#0b8176}.admin-more[open] summary:after{content:'−'}
+.admin-more summary .dashboard-refresh{position:absolute;right:22px;top:-7px;padding:5px 8px;font-size:9px}
+.admin-more .dashboard-panel{margin-top:12px;padding:11px}.admin-more .download-history{margin-top:10px}
+.admin-upload-area{margin-top:12px;padding:13px;border:1px solid #dcebe8;border-radius:13px;background:#fff}
+.admin-upload-area[hidden]{display:none}.admin-upload-area form{margin:0}
+.admin-upload-area label{margin:11px 0;font-size:11px}
+@media(max-width:390px){.admin-dashboard{padding:12px}.admin-shortcuts{gap:8px}.admin-shortcut{min-height:112px;padding:11px}.admin-shortcut strong{font-size:12px}.admin-dashboard .dashboard-stat{padding:10px 5px}.admin-dashboard .dashboard-stat strong{font-size:18px}}

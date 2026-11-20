@@ -97,38 +97,30 @@ function ensureAdminDashboard() {
   dashboard.className = "admin-dashboard";
   dashboard.hidden = true;
   dashboard.innerHTML = `
-    <div class="dashboard-heading">
-      <div>
-        <span class="dashboard-kicker">OVERVIEW</span>
-        <h3>Statistik Katalog</h3>
-      </div>
-      <button type="button" class="dashboard-refresh" id="refreshAdminStats">↻ Refresh</button>
+    <div class="popup-admin-brand"><div><span class="dashboard-kicker">IFAL-WRT · ADMIN PANEL</span><h3>Dashboard Admin</h3><p>Kelola aplikasi dan permintaan premium.</p></div><button type="button" class="dashboard-refresh" id="refreshAdminStats" aria-label="Refresh statistik">↻</button></div>
+    <div class="admin-shortcuts">
+      <button type="button" class="admin-shortcut upload-shortcut" data-admin-action="upload"><span class="shortcut-icon">⇧</span><strong>Upload APK</strong><small>Unggah aplikasi terbaru</small><span class="shortcut-arrow">›</span></button>
+      <button type="button" class="admin-shortcut premium-shortcut" data-admin-action="premium"><span class="shortcut-icon">♛</span><strong>Permintaan Premium</strong><small>Kelola permintaan pengguna</small><span class="shortcut-arrow">›</span></button>
     </div>
+    <div class="stats-heading"><h4>Statistik Singkat</h4></div>
     <div class="dashboard-cards" id="dashboardCards"></div>
-    <div class="dashboard-panel">
-      <div class="dashboard-panel-title"><strong>Unduhan 7 hari terakhir</strong><span>Harian</span></div>
-      <div class="dashboard-chart" id="dashboardChart"></div>
-    </div>
-    <div class="dashboard-panel">
-      <div class="dashboard-panel-title"><strong>Aplikasi terpopuler</strong><span>Top 5</span></div>
-      <div class="dashboard-ranking" id="dashboardRanking"></div>
-    </div>
-    <div class="dashboard-panel">
-      <div class="dashboard-panel-title"><strong>Riwayat unduhan</strong><span id="historyCount">Terbaru</span></div>
-      <div class="download-history" id="downloadHistory"></div>
-    </div>
-    <div class="dashboard-panel">
-      <div class="dashboard-panel-title"><strong>Daftar Pengguna & Device ID</strong><button type="button" id="refreshUsers" class="dashboard-refresh">Refresh</button></div>
-      <div id="registeredUsers" class="download-history">Memuat daftar pengguna...</div>
-    </div>
-    <div class="dashboard-panel">
-      <div class="dashboard-panel-title"><strong>Permintaan Premium Lifetime</strong><button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></div>
-      <div id="paymentRequests" class="download-history">Memuat permintaan pembayaran...</div>
-    </div>`;
+    <details class="admin-more"><summary>Analitik & riwayat unduhan</summary>
+      <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Unduhan 7 hari terakhir</strong><span>Harian</span></div><div class="dashboard-chart" id="dashboardChart"></div></div>
+      <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Aplikasi terpopuler</strong><span>Top 5</span></div><div class="dashboard-ranking" id="dashboardRanking"></div></div>
+      <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Riwayat unduhan</strong><span id="historyCount">Terbaru</span></div><div class="download-history" id="downloadHistory"></div></div>
+    </details>
+    <details class="admin-more" id="adminUsersPanel"><summary>Daftar Pengguna & Device ID <button type="button" id="refreshUsers" class="dashboard-refresh">Refresh</button></summary><div id="registeredUsers" class="download-history"></div></details>
+    <details class="admin-more" id="adminPaymentsPanel"><summary>Permintaan Premium Lifetime <button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></summary><div id="paymentRequests" class="download-history"></div></details>
+    <div id="adminUploadArea" class="admin-upload-area" hidden></div>`;
   const intro = $("#adminIntro");
   const uploadForm = $("#uploadForm");
-  if (intro && uploadForm) uploadForm.parentNode.insertBefore(dashboard, uploadForm);
-  else if (uploadForm) uploadForm.insertAdjacentElement("beforebegin", dashboard);
+  if (intro && uploadForm) {
+    uploadForm.parentNode.insertBefore(dashboard, uploadForm);
+    dashboard.querySelector("#adminUploadArea").appendChild(uploadForm);
+  } else if (uploadForm) {
+    uploadForm.insertAdjacentElement("beforebegin", dashboard);
+    dashboard.querySelector("#adminUploadArea").appendChild(uploadForm);
+  }
 }
 
 function renderAdminStats(stats) {
@@ -138,9 +130,9 @@ function renderAdminStats(stats) {
   if (!cards || !chart || !ranking) return;
 
   cards.innerHTML = `
-    <div class="dashboard-stat"><span>Total aplikasi</span><strong>${Number(stats.appCount || 0).toLocaleString("id-ID")}</strong></div>
-    <div class="dashboard-stat"><span>Total unduhan</span><strong>${Number(stats.totalDownloads || 0).toLocaleString("id-ID")}</strong></div>
-    <div class="dashboard-stat"><span>Unduhan tercatat</span><strong>${Number(stats.trackedDownloads || 0).toLocaleString("id-ID")}</strong></div>`;
+    <div class="dashboard-stat"><span>Total APK</span><strong>${Number(stats.appCount || 0).toLocaleString("id-ID")}</strong></div>
+    <div class="dashboard-stat"><span>User Premium</span><strong id="premiumUserCount">—</strong></div>
+    <div class="dashboard-stat"><span>Total Unduhan</span><strong>${Number(stats.totalDownloads || 0).toLocaleString("id-ID")}</strong></div>`;
 
   const days = Array.isArray(stats.daily) ? stats.daily : [];
   const max = Math.max(1, ...days.map(day => Number(day.count) || 0));
@@ -213,6 +205,9 @@ async function loadRegisteredUsers() {
   try {
     const data = await request("/api/admin/users", { cache: "no-store" });
     const users = Array.isArray(data.users) ? data.users : [];
+    const premiumCount = users.filter(user => user.plan === "lifetime").length;
+    const premiumNode = $("#premiumUserCount");
+    if (premiumNode) premiumNode.textContent = premiumCount.toLocaleString("id-ID");
     if (!users.length) { container.innerHTML = '<p class="dashboard-empty">Belum ada pengguna terdaftar.</p>'; return; }
     container.innerHTML = users.map(user => {
       const plan = user.plan === "lifetime" ? "Premium permanen" : user.plan === "trial" ? "Trial aktif" : "Trial berakhir";
@@ -523,6 +518,15 @@ async function openAdmin() {
 
 $("#adminBtn").addEventListener("click", openAdmin);
 document.addEventListener("click", (event) => {
+  const adminAction = event.target.closest("[data-admin-action]");
+  if (adminAction?.dataset.adminAction === "upload") {
+    const area = $("#adminUploadArea");
+    if (area) { area.hidden = !area.hidden; if (!area.hidden) area.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+  }
+  if (adminAction?.dataset.adminAction === "premium") {
+    const panel = $("#adminPaymentsPanel");
+    if (panel) { panel.open = true; panel.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+  }
   if (event.target.closest("#refreshAdminStats")) loadAdminStats();
   if (event.target.closest("#refreshUsers")) loadRegisteredUsers();
   if (event.target.closest("#refreshPayments")) loadPaymentRequests();
