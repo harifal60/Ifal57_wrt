@@ -96,8 +96,12 @@ function isNativeAppRequest(req) {
   return req.get("X-IFAL-Client") === "android-app";
 }
 function requestDeviceId(req) {
-  if (!isNativeAppRequest(req)) return "";
+  // Android WebView supplies the native ANDROID_ID; ordinary browsers supply
+  // their own persistent installation ID from localStorage.
   return String(req.get("X-Device-ID") || req.body?.deviceId || "").trim().slice(0, 200);
+}
+function requestDeviceMode(req) {
+  return isNativeAppRequest(req) ? "android-app" : "browser";
 }
 function validDeviceId(value) {
   return typeof value === "string" && value.length >= 12 && value.length <= 200 && /^[a-zA-Z0-9._:-]+$/.test(value);
@@ -109,7 +113,6 @@ function deviceAlreadyUsedByAnotherAccount(users, deviceId, currentUserId = null
   return users.some(user =>
     user.id !== currentUserId &&
     user.deviceId &&
-    !String(user.deviceId).startsWith("web-") &&
     user.deviceId === deviceId
   );
 }
@@ -213,21 +216,25 @@ app.post("/api/customer/register", async (req, res) => {
   const password = String(req.body.password || "");
   const nativeApp = isNativeAppRequest(req);
   const deviceId = requestDeviceId(req);
-  if (nativeApp && !validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak terbaca. Tutup lalu buka kembali aplikasi." });
+  const deviceMode = requestDeviceMode(req);
+  if (!validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak terbaca. Aktifkan penyimpanan browser atau buka ulang aplikasi." });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Masukkan alamat email yang valid." });
   if (password.length < 10) return res.status(400).json({ error: "Password minimal 10 karakter." });
   const users = readUsers();
-  if (nativeApp && deviceAlreadyUsedByAnotherAccount(users, deviceId)) {
-    return res.status(403).json({ error: "Perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin jika perlu reset perangkat." });
+  if (deviceAlreadyUsedByAnotherAccount(users, deviceId)) {
+    return res.status(403).json({ error: "ID perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin untuk persetujuan reset perangkat." });
   }
   if (users.some(user => user.email === email)) return res.status(409).json({ error: "Email sudah terdaftar. Silakan login." });
   const now = Date.now();
   const user = { id: crypto.randomUUID(), email, hash: await bcrypt.hash(password, 12), createdAt: new Date(now).toISOString(), trialEndsAt: new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), plan: "trial" };
-  if (nativeApp) { user.deviceId = deviceId; user.deviceBoundAt = new Date(now).toISOString(); }
+  user.deviceId = deviceId;
+  user.deviceMode = deviceMode;
+  user.deviceBoundAt = new Date(now).toISOString();
   users.push(user); writeUsers(users);
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
-  req.session.deviceId = nativeApp ? deviceId : null;
+  req.session.deviceId = deviceId;
+  req.session.deviceMode = deviceMode;
   res.json({ ok: true, account: customerStatus(user) });
 });
 
@@ -236,24 +243,30 @@ app.post("/api/customer/login", async (req, res) => {
   const password = String(req.body.password || "");
   const nativeApp = isNativeAppRequest(req);
   const deviceId = requestDeviceId(req);
-  if (nativeApp && !validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak terbaca. Tutup lalu buka kembali aplikasi." });
+  const deviceMode = requestDeviceMode(req);
+  if (!validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak terbaca. Aktifkan penyimpanan browser atau buka ulang aplikasi." });
   const users = readUsers();
   const user = users.find(item => item.email === email);
   if (!user || !(await bcrypt.compare(password, user.hash))) return res.status(401).json({ error: "Email atau password salah." });
-  if (nativeApp) {
-    if (deviceAlreadyUsedByAnotherAccount(users, deviceId, user.id)) {
-      return res.status(403).json({ error: "Perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin jika perlu reset perangkat." });
-    }
-    // ID browser lama (web-...) bukan ikatan perangkat Android; migrasikan saat APK login.
-    if (user.deviceId && !String(user.deviceId).startsWith("web-") && deviceMismatch(user, deviceId)) {
-      return res.status(403).json({ error: "Perangkat Android ini sudah terikat ke akun lain atau akun ini terikat ke perangkat lain. Hubungi admin untuk reset perangkat." });
-    }
-    // Hanya login dari APK Android yang boleh membuat atau memeriksa ikatan perangkat.
-    if (!user.deviceId || String(user.deviceId).startsWith("web-")) { user.deviceId = deviceId; user.deviceBoundAt = new Date().toISOString(); writeUsers(users); }
+  if (deviceAlreadyUsedByAnotherAccount(users, deviceId, user.id)) {
+    return res.status(403).json({ error: "ID perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin untuk persetujuan reset perangkat." });
+  }
+  // Lock both the device identity and the login channel. Switching between
+  // Android app and browser requires an administrator reset/approval.
+  const savedMode = user.deviceMode || (String(user.deviceId || "").startsWith("web-") ? "browser" : (user.deviceId ? "android-app" : ""));
+  if (user.deviceId && (deviceMismatch(user, deviceId) || savedMode !== deviceMode)) {
+    return res.status(403).json({ error: "Akun ini sudah terikat ke perangkat atau jalur login lain. Perpindahan aplikasi ↔ browser harus mendapat persetujuan admin. Hubungi admin untuk reset perangkat." });
+  }
+  if (!user.deviceId) {
+    user.deviceId = deviceId;
+    user.deviceMode = deviceMode;
+    user.deviceBoundAt = new Date().toISOString();
+    writeUsers(users);
   }
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
-  req.session.deviceId = nativeApp ? deviceId : null;
+  req.session.deviceId = deviceId;
+  req.session.deviceMode = deviceMode;
   res.json({ ok: true, account: customerStatus(user) });
 });
 
@@ -360,6 +373,7 @@ app.get("/api/admin/users", isAdmin, (req, res) => {
     trialEndsAt: user.trialEndsAt || null,
     createdAt: user.createdAt || null,
     deviceId: user.deviceId || null,
+    deviceMode: user.deviceMode || (String(user.deviceId || "").startsWith("web-") ? "browser" : (user.deviceId ? "android-app" : null)),
     deviceBoundAt: user.deviceBoundAt || null
   })).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   res.json({ users, total: users.length });
@@ -399,6 +413,7 @@ app.post("/api/admin/users/:id/reset-device", isAdmin, (req, res) => {
   if (!user) return res.status(404).json({ error: "Akun tidak ditemukan." });
   const previousDeviceId = user.deviceId || null;
   delete user.deviceId;
+  delete user.deviceMode;
   delete user.deviceBoundAt;
   writeUsers(users);
   // Sesi lama tidak lagi dapat mengunduh; pemilik harus login ulang untuk mengikat perangkat baru.
@@ -408,12 +423,13 @@ app.post("/api/admin/users/:id/reset-device", isAdmin, (req, res) => {
 app.post("/api/customer/logout", (req, res) => {
   req.session.userId = null;
   req.session.deviceId = null;
+  req.session.deviceMode = null;
   res.json({ ok: true });
 });
 
 app.get("/api/customer/me", (req, res) => {
   const user = req.session.userId ? readUsers().find(item => item.id === req.session.userId) : null;
-  if (user && req.session.deviceId && (!user.deviceId || deviceMismatch(user, req.session.deviceId))) {
+  if (user && req.session.deviceId && (!user.deviceId || deviceMismatch(user, req.session.deviceId) || (user.deviceMode && req.session.deviceMode && user.deviceMode !== req.session.deviceMode))) {
     req.session.userId = null; req.session.deviceId = null;
     return res.status(403).json({ error: "Sesi perangkat tidak cocok. Silakan login kembali." });
   }
