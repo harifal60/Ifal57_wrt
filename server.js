@@ -94,6 +94,12 @@ function deviceMismatch(user, deviceId) {
   return !!(user.deviceId && user.deviceId !== deviceId);
 }
 function requireCustomer(req, res, next) {
+  // Admin yang sudah login boleh mengunduh APK dari katalog tanpa akun pelanggan.
+  // Aturan trial, Premium Lifetime, dan ikatan perangkat tetap berlaku untuk pelanggan biasa.
+  if (req.session.admin) {
+    req.isAdminDownload = true;
+    return next();
+  }
   if (!req.session.userId) return res.redirect("/?login=1");
   const user = readUsers().find(item => item.id === req.session.userId);
   if (!user) { req.session.userId = null; return res.redirect("/?login=1"); }
