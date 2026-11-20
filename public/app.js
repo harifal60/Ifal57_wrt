@@ -52,22 +52,33 @@ function formatSize(bytes) {
 }
 
 function getDeviceId() {
-  // Hanya APK/STB yang memiliki bridge native dan mengirim ANDROID_ID.
-  // Browser tidak membuat ID lokal agar tidak mengikat akun ke browser.
+  // Di aplikasi Android TV, ID berasal dari ANDROID_ID melalui bridge native.
   try {
     if (window.IFALDevice && typeof window.IFALDevice.getDeviceId === "function") {
       const nativeId = String(window.IFALDevice.getDeviceId() || "").trim();
       if (nativeId) return nativeId;
     }
   } catch (_) {}
-  return "";
+  // Untuk browser biasa, gunakan ID instalasi persisten (bukan hardware ID).
+  const key = "ifal57_device_id_v1";
+  let id = "";
+  try { id = localStorage.getItem(key) || ""; } catch (_) {}
+  if (!/^[a-zA-Z0-9._:-]{12,200}$/.test(id)) {
+    id = "web-" + (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    try { localStorage.setItem(key, id); } catch (_) {}
+  }
+  return id;
 }
 
 async function request(url, options = {}) {
   const headers = new Headers(options.headers || {});
-  const deviceId = getDeviceId();
-  if (deviceId) headers.set("X-Device-ID", deviceId);
-  else headers.delete("X-Device-ID");
+  headers.set("X-Device-ID", getDeviceId());
+  // Browser biasa tidak boleh mengubah ikatan Device ID Android.
+  try {
+    if (window.IFALDevice && typeof window.IFALDevice.getDeviceId === "function" && String(window.IFALDevice.getDeviceId() || "").trim()) {
+      headers.set("X-IFAL-Client", "android-app");
+    }
+  } catch (_) {}
   const response = await fetch(url, { ...options, headers });
   const raw = await response.text();
   let data = {};
