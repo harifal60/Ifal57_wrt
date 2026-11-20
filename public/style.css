@@ -1137,3 +1137,80 @@ html[data-theme="dark"] .app .meta-pill small{
 html[data-theme="dark"] .app .meta-pill strong{
   color:#f0faf6!important;
 }
+
+
+/* IFAL57_WRT FIX v2: dashboard in index.html loads style.css, so style the trash button here. */
+.user-admin-actions{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+  flex-wrap:nowrap !important;
+}
+.user-admin-actions button.user-delete-icon,
+button.user-delete-icon[data-delete-user]{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  box-sizing:border-box !important;
+  display:inline-flex !important;
+  flex:0 0 40px !important;
+  width:40px !important;
+  min-width:40px !important;
+  max-width:40px !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  padding:8px !important;
+  margin:0 !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:#ef3434 !important;
+  color:#ffffff !important;
+  box-shadow:0 3px 8px rgba(239,52,52,.22) !important;
+  font-size:0 !important;
+  line-height:1 !important;
+  cursor:pointer !important;
+  overflow:hidden !important;
+}
+.user-admin-actions button.user-delete-icon:hover,
+button.user-delete-icon[data-delete-user]:hover{
+  background:#d92323 !important;
+}
+.user-admin-actions button.user-delete-icon:disabled,
+button.user-delete-icon[data-delete-user]:disabled{
+  opacity:.55 !important;
+  cursor:wait !important;
+}
+.user-admin-actions button.user-delete-icon svg,
+button.user-delete-icon[data-delete-user] svg{
+  display:block !important;
+  width:24px !important;
+  min-width:24px !important;
+  max-width:24px !important;
+  height:24px !important;
+  min-height:24px !important;
+  max-height:24px !important;
+  fill:none !important;
+  stroke:#ffffff !important;
+  stroke-width:2 !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  pointer-events:none !important;
+}
+.user-admin-actions button.user-delete-icon svg path,
+button.user-delete-icon[data-delete-user] svg path{
+  fill:none !important;
+  stroke:#ffffff !important;
+}
+@media(max-width:600px){
+  .user-admin-actions{gap:6px !important;}
+  .user-admin-actions button.user-delete-icon,
+  button.user-delete-icon[data-delete-user]{
+    flex-basis:38px !important;width:38px !important;min-width:38px !important;max-width:38px !important;
+    height:38px !important;min-height:38px !important;max-height:38px !important;
+  }
+}
