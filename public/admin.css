@@ -182,3 +182,60 @@
 .user-delete:hover{background:#fff3f3}
 .user-delete:disabled{opacity:.6;cursor:wait}
 @media(max-width:600px){.user-actions{width:100%;justify-content:flex-start}.user-actions button{flex:1}}
+
+
+/* IFAL57_WRT: tombol hapus akun berupa ikon tempat sampah merah */
+.user-admin-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.user-admin-actions [data-reset-device]{
+  white-space:nowrap;
+}
+.user-admin-actions .user-delete-icon{
+  display:inline-flex;
+  flex:0 0 42px;
+  align-items:center;
+  justify-content:center;
+  width:42px;
+  height:42px;
+  padding:0;
+  border:0;
+  border-radius:11px;
+  background:#ef3434;
+  color:#fff;
+  cursor:pointer;
+  box-shadow:0 3px 8px rgba(239,52,52,.18);
+  transition:background .15s ease, transform .15s ease, opacity .15s ease;
+}
+.user-admin-actions .user-delete-icon:hover{
+  background:#d92323;
+  transform:translateY(-1px);
+}
+.user-admin-actions .user-delete-icon:disabled{
+  cursor:wait;
+  opacity:.55;
+}
+.user-admin-actions .user-delete-icon svg{
+  display:block;
+  width:22px;
+  height:22px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+@media(max-width:600px){
+  .user-admin-actions{
+    gap:7px;
+  }
+  .user-admin-actions .user-delete-icon{
+    flex-basis:40px;
+    width:40px;
+    height:40px;
+  }
+}

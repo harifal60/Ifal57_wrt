@@ -195,7 +195,7 @@ async function loadRegisteredUsers() {
         ? `<br><span class="history-status">Menunggu persetujuan login aplikasi</span><br><small>Device ID aplikasi: ${esc(user.appAccessDeviceId || "—")}</small>`
         : user.appAccessApproved ? '<br><span class="history-status">Login aplikasi disetujui</span>' : "";
       const approveButton = user.appAccessPending ? `<button type="button" class="primary" data-approve-app-access="${esc(user.id)}">Setujui login aplikasi</button>` : "";
-      return `<div class="history-row"><div class="history-info"><strong>${esc(user.email)}</strong><small>${esc(plan)} · Daftar: ${esc(created)}<br>Device ID: ${esc(user.deviceId || user.browserDeviceId || "Belum terikat")}${appAccess}</small></div><div class="user-admin-actions">${approveButton}<button type="button" class="text-button" data-reset-device="${esc(user.id)}">Reset perangkat</button><button type="button" class="danger-button" data-delete-user="${esc(user.id)}">Hapus akun</button></div></div>`;
+      return `<div class="history-row"><div class="history-info"><strong>${esc(user.email)}</strong><small>${esc(plan)} · Daftar: ${esc(created)}<br>Device ID: ${esc(user.deviceId || user.browserDeviceId || "Belum terikat")}${appAccess}</small></div><div class="user-admin-actions">${approveButton}<button type="button" class="text-button" data-reset-device="${esc(user.id)}">Reset perangkat</button><button type="button" class="user-delete-icon" data-delete-user="${esc(user.id)}" aria-label="Hapus akun" title="Hapus akun"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button></div></div>`;
     }).join("");
   } catch (error) { container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Daftar pengguna tidak dapat dimuat.")}</p>`; }
 }
@@ -439,7 +439,7 @@ document.addEventListener("click", async (event) => {
   if (deleteUser) {
     if (!confirm("Sembunyikan akun ini dari daftar admin? Akun dan password tetap tersimpan. Pengguna bisa login kembali dengan email dan password yang sama.")) return;
     deleteUser.disabled = true;
-    deleteUser.textContent = "Menghapus...";
+    deleteUser.classList.add("is-loading");
     try {
       await request(`/api/admin/users/${encodeURIComponent(deleteUser.dataset.deleteUser)}`, { method: "DELETE" });
       await loadRegisteredUsers();
@@ -448,7 +448,7 @@ document.addEventListener("click", async (event) => {
       setMessage("Akun disembunyikan dari daftar admin. Pengguna tetap bisa login lagi dengan email dan password lama.", "success");
     } catch (error) {
       deleteUser.disabled = false;
-      deleteUser.textContent = "Hapus akun";
+      deleteUser.classList.remove("is-loading");
       setMessage(error.message || "Gagal menghapus akun.", "error");
     }
     return;
