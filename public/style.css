@@ -1124,3 +1124,16 @@ html[data-theme="dark"] .catalog-update-notice[hidden]{display:none!important}
 html[data-theme="dark"] .sortbox{color:#a7bfba}
 html[data-theme="dark"] .sortbox select{background:#142220;border-color:#34504b;color:#e5eeee}
 @media(max-width:560px){.catalog-controls{width:100%;flex-direction:column;align-items:stretch}.sortbox{justify-content:space-between}.sortbox select{flex:1;min-width:0}.catalog-controls .searchbox{width:100%}}
+
+
+/* Perbaikan kontras label versi dan ukuran pada tema gelap */
+html[data-theme="dark"] .app .meta-pill{
+  background:#203632!important;
+  border-color:#3b5a53!important;
+}
+html[data-theme="dark"] .app .meta-pill small{
+  color:#a9c5bd!important;
+}
+html[data-theme="dark"] .app .meta-pill strong{
+  color:#f0faf6!important;
+}
