@@ -833,3 +833,40 @@ dialog{
 .customer-dashboard .customer-logout span{margin-left:5px}
 @media(max-width:700px){.customer-dashboard .customer-summary{grid-template-columns:1fr 1fr}.customer-dashboard .customer-plan-card{grid-column:1/-1}.customer-dashboard .customer-dashboard-bottom{grid-template-columns:1fr}}
 @media(max-width:460px){.customer-dashboard .customer-welcome{align-items:flex-start;flex-direction:column}.customer-dashboard .customer-user{width:100%}.customer-dashboard .customer-summary{grid-template-columns:1fr}.customer-dashboard .customer-plan-card{grid-column:auto}.customer-dashboard .customer-info-card{display:grid!important;grid-template-columns:40px 1fr;column-gap:10px;align-items:center}.customer-dashboard .customer-info-icon{grid-row:1/3;margin:0}.customer-dashboard .customer-info-card>small,.customer-dashboard .customer-info-card>strong,.customer-dashboard .customer-info-card>p{grid-column:2}.customer-dashboard .customer-info-card>strong{margin-top:3px}}
+
+
+/* Compact customer dashboard refresh — visual-only; admin and catalog logic untouched */
+body.customer-logged-in .hero{display:none}
+body.customer-logged-in .account-bar:has(.customer-dashboard){margin-top:10px}
+.customer-dashboard-compact{max-width:980px;margin:12px auto 22px!important;padding:18px!important;border:1px solid #dcebe8!important;border-radius:18px!important;background:#f7fbfa!important;box-shadow:none!important}
+.customer-dashboard-compact .customer-compact-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.customer-dashboard-compact .customer-compact-head h2{margin:3px 0;color:#183d3a;font-size:22px;letter-spacing:-.5px}
+.customer-dashboard-compact .customer-compact-head p{margin:0;color:#718582;font-size:12px;overflow-wrap:anywhere}
+.customer-dashboard-compact .customer-avatar{flex:0 0 42px;width:42px;height:42px;border-radius:13px}
+.customer-dashboard-compact .customer-plan-card{padding:16px 17px;border-radius:15px;box-shadow:none}
+.customer-dashboard-compact .customer-plan-title{margin-top:9px;font-size:22px}
+.customer-dashboard-compact .customer-plan-card p{margin-top:5px;font-size:12px}
+.customer-dashboard-compact .trial-progress{margin:11px 0 2px}
+.customer-dashboard-compact .customer-upgrade{margin-top:11px;padding:9px 14px;font-size:12px}
+.customer-dashboard-compact .customer-quick-info{display:flex;flex-wrap:wrap;gap:8px 18px;padding:12px 2px;color:#607974;font-size:11px}
+.customer-dashboard-compact .customer-quick-info span:first-child{color:#0b8176}
+.customer-dashboard-compact .customer-history-card{padding:14px 16px;border-radius:14px;box-shadow:none}
+.customer-dashboard-compact .customer-section-heading h3{margin:0;color:#244b49;font-size:15px}
+.customer-dashboard-compact .history-empty{margin-top:8px;padding:10px 12px}
+.customer-dashboard-compact .history-row{padding:8px 0}
+.customer-dashboard-compact .customer-compact-actions{display:flex;align-items:center;gap:14px;margin-top:12px}
+.customer-dashboard-compact .catalog-cta{width:auto;max-width:280px;min-height:44px;padding:10px 14px}
+.customer-dashboard-compact .catalog-cta strong{font-size:12px}
+.customer-dashboard-compact .catalog-cta>span{display:inline-flex;align-items:center}
+.customer-dashboard-compact .catalog-cta>span:last-child{margin-left:12px;color:#0b897b;font-size:18px}
+.customer-dashboard-compact .customer-logout{margin:0;padding:10px 4px}
+body.customer-logged-in #catalog{margin-top:24px}
+@media(max-width:600px){
+ .customer-dashboard-compact{margin:8px auto 16px!important;padding:13px!important;border-radius:16px!important}
+ .customer-dashboard-compact .customer-compact-head h2{font-size:20px}
+ .customer-dashboard-compact .customer-plan-card{padding:14px}
+ .customer-dashboard-compact .customer-plan-title{font-size:20px}
+ .customer-dashboard-compact .customer-quick-info{gap:7px 13px;font-size:10px}
+ .customer-dashboard-compact .customer-compact-actions{gap:12px}
+ .customer-dashboard-compact .catalog-cta{flex:1;max-width:none}
+}

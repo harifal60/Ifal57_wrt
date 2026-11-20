@@ -358,31 +358,41 @@ function renderCustomerAccount() {
     ? expiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—";
   const daysLabel = remainingDays > 1 ? `${remainingDays} hari tersisa`
     : remainingDays === 1 ? "1 hari tersisa" : "Berakhir hari ini";
+  document.body.classList.toggle("customer-logged-in", true);
   bar.innerHTML = `
-    <div class="customer-dashboard">
-      <div class="customer-welcome">
-        <div><span class="customer-kicker">AREA PELANGGAN</span>
-          <h2>Selamat datang kembali</h2>
-          <p>Kelola akun dan temukan aplikasi favorit Anda di IFAL57_WRT.</p>
+    <div class="customer-dashboard customer-dashboard-compact">
+      <div class="customer-compact-head">
+        <div>
+          <span class="customer-kicker">AKUN PELANGGAN</span>
+          <h2>Halo, ${esc((customerAccount.email || "Pelanggan").split("@")[0])}</h2>
+          <p>${esc(customerAccount.email || "")}</p>
         </div>
-        <div class="customer-user"><span class="customer-avatar">${esc((customerAccount.email || "U").slice(0,1).toUpperCase())}</span>
-          <span><strong>${esc(customerAccount.email)}</strong><small>Akun pelanggan</small></span>
+        <span class="customer-avatar">${esc((customerAccount.email || "U").slice(0,1).toUpperCase())}</span>
+      </div>
+      <section class="customer-plan-card ${isPremium ? "is-premium" : isTrial ? "is-trial" : "is-expired"}">
+        <div class="customer-card-top">
+          <span>STATUS LANGGANAN</span>
+          <span class="status-pill">${status}</span>
         </div>
+        <strong class="customer-plan-title">${isPremium ? "Premium Lifetime" : isTrial ? `${remainingDays} hari tersisa` : "Trial telah berakhir"}</strong>
+        <p>${isPremium ? "Akun Anda memiliki akses Premium tanpa batas waktu." : isTrial ? `Trial gratis berakhir pada ${dateLabel}.` : "Aktifkan Premium untuk melanjutkan akses unduhan."}</p>
+        ${isTrial ? `<div class="trial-progress"><span style="width:${Math.max(0,Math.min(100,remainingDays/7*100))}%"></span></div>` : ""}
+        ${!isPremium ? `<button type="button" id="openPremium" class="primary customer-upgrade">${isTrial ? "Lihat Premium · Rp25.000" : "Aktifkan Premium · Rp25.000"}</button>` : ""}
+      </section>
+      <div class="customer-quick-info">
+        <span>● Perangkat ${customerAccount.deviceBound ? "terhubung" : "belum terhubung"}</span>
+        <span>● Katalog ${customerAccount.canDownload ? "tersedia" : "dibatasi"}</span>
       </div>
-      <div class="customer-summary">
-        <article class="customer-plan-card ${isPremium ? "is-premium" : isTrial ? "is-trial" : "is-expired"}">
-          <div class="customer-card-top"><span>Status Langganan</span><span class="status-pill">${status}</span></div>
-          <strong class="customer-plan-title">${isPremium ? "Akses Premium" : isTrial ? "Masa Trial Gratis" : "Akses Trial Selesai"}</strong>
-          <p>${isPremium ? "Akun Anda memiliki akses Premium tanpa batas waktu." : isTrial ? `Nikmati akses penuh. ${daysLabel}.` : "Aktifkan Premium untuk melanjutkan akses unduhan."}</p>
-          ${isTrial ? `<div class="trial-progress"><span style="width:${Math.max(0,Math.min(100,remainingDays/7*100))}%"></span></div><small>Trial berakhir: ${dateLabel}</small>` : ""}
-          ${!isPremium ? `<button type="button" id="openPremium" class="primary customer-upgrade">${isTrial ? "Lihat opsi Premium" : "Aktifkan Premium · Rp25.000"}</button>` : ""}
-        </article>
-        <article class="customer-info-card"><span class="customer-info-icon">✦</span><small>AKUN TERDAFTAR</small><strong>${customerAccount.createdAt ? new Date(customerAccount.createdAt).toLocaleDateString("id-ID") : "Aktif"}</strong><p>Perangkat terhubung: ${customerAccount.deviceBound ? "Ya" : "Tidak"}</p></article>
-        <article class="customer-info-card"><span class="customer-info-icon">⬇</span><small>AKSES KATALOG</small><strong>${customerAccount.canDownload ? "Tersedia" : "Dibatasi"}</strong><p>${customerAccount.canDownload ? "Anda dapat mengunduh aplikasi." : "Perbarui paket untuk mengunduh."}</p></article>
-      </div>
-      <div class="customer-dashboard-bottom">
-        <div class="customer-history-card"><div class="customer-section-heading"><div><small>AKTIVITAS</small><h3>Riwayat download</h3></div><span class="history-count" id="customerHistoryCount">—</span></div><div id="customerHistoryList" class="customer-history-list"><p class="history-empty">Memuat riwayat download...</p></div></div>
-        <div class="customer-shortcuts"><div><small>JELAJAHI</small><h3>Apa yang ingin Anda lakukan?</h3></div><button type="button" id="browseCatalog" class="catalog-cta"><span>▦</span><span><strong>Buka katalog aplikasi</strong><small>Lihat koleksi aplikasi terbaru</small></span><b>→</b></button><button type="button" id="customerLogout" class="customer-logout">Keluar dari akun <span>↗</span></button></div>
+      <section class="customer-history-card">
+        <div class="customer-section-heading">
+          <h3>Riwayat download</h3>
+          <span class="history-count" id="customerHistoryCount">—</span>
+        </div>
+        <div id="customerHistoryList" class="customer-history-list"><p class="history-empty">Memuat riwayat...</p></div>
+      </section>
+      <div class="customer-compact-actions">
+        <button type="button" id="browseCatalog" class="catalog-cta"><strong>Buka katalog aplikasi</strong><span>→</span></button>
+        <button type="button" id="customerLogout" class="customer-logout">Keluar</button>
       </div>
     </div>`;
   $("#userBtn").textContent = isPremium ? "Premium aktif" : "Akun saya";
