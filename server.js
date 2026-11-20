@@ -420,6 +420,24 @@ app.post("/api/admin/users/:id/reset-device", isAdmin, (req, res) => {
   res.json({ ok: true, email: user.email, previousDeviceId });
 });
 
+// Hapus akun pelanggan beserta permintaan Premium yang terkait.
+app.delete("/api/admin/users/:id", isAdmin, (req, res) => {
+  const users = readUsers();
+  const userIndex = users.findIndex(item => item.id === req.params.id);
+  if (userIndex === -1) return res.status(404).json({ error: "Akun tidak ditemukan." });
+
+  const [user] = users.splice(userIndex, 1);
+  writeUsers(users);
+
+  const payments = readPayments();
+  const remainingPayments = payments.filter(item => item.userId !== user.id);
+  if (remainingPayments.length !== payments.length) writePayments(remainingPayments);
+
+  // Sesi pelanggan yang masih tersimpan tidak lagi dapat menemukan akun ini,
+  // sehingga endpoint pelanggan dan download akan menolak akses berikutnya.
+  res.json({ ok: true, email: user.email, removedPayments: payments.length - remainingPayments.length });
+});
+
 app.post("/api/customer/logout", (req, res) => {
   req.session.userId = null;
   req.session.deviceId = null;
