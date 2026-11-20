@@ -51,15 +51,25 @@ function formatSize(bytes) {
   return `${Math.max(1, Math.round(size / 1024))} KB`;
 }
 
-function getDeviceId() {
-  // Di aplikasi Android TV, ID berasal dari ANDROID_ID melalui bridge native.
+function getNativeDeviceId() {
   try {
     if (window.IFALDevice && typeof window.IFALDevice.getDeviceId === "function") {
-      const nativeId = String(window.IFALDevice.getDeviceId() || "").trim();
-      if (nativeId) return nativeId;
+      return String(window.IFALDevice.getDeviceId() || "").trim();
     }
   } catch (_) {}
-  // Untuk browser biasa, gunakan ID instalasi persisten (bukan hardware ID).
+  return "";
+}
+
+function isNativeAppClient() {
+  return !!getNativeDeviceId() || /IFAL57AndroidApp/i.test(navigator.userAgent || "");
+}
+
+function getDeviceId() {
+  // Di aplikasi Android TV, ID berasal dari ANDROID_ID melalui bridge native.
+  const nativeId = getNativeDeviceId();
+  if (nativeId) return nativeId;
+
+  // Untuk browser biasa, gunakan ID instalasi persisten.
   const key = "ifal57_device_id_v1";
   let id = "";
   try { id = localStorage.getItem(key) || ""; } catch (_) {}
@@ -72,13 +82,17 @@ function getDeviceId() {
 
 async function request(url, options = {}) {
   const headers = new Headers(options.headers || {});
-  headers.set("X-Device-ID", getDeviceId());
-  // Browser biasa tidak boleh mengubah ikatan Device ID Android.
-  try {
-    if (window.IFALDevice && typeof window.IFALDevice.getDeviceId === "function" && String(window.IFALDevice.getDeviceId() || "").trim()) {
-      headers.set("X-IFAL-Client", "android-app");
-    }
-  } catch (_) {}
+  const nativeApp = isNativeAppClient();
+  const deviceId = nativeApp ? getNativeDeviceId() : getDeviceId();
+
+  // Jangan diam-diam mengirim ID browser sebagai ID aplikasi Android.
+  if (nativeApp && !deviceId) {
+    throw new Error("ID perangkat Android tidak terbaca. Tutup lalu buka kembali aplikasi IFAL57_WRT.");
+  }
+  headers.set("X-Device-ID", deviceId);
+  if (nativeApp) headers.set("X-IFAL-Client", "android-app");
+  else headers.delete("X-IFAL-Client");
+
   const response = await fetch(url, { ...options, headers });
   const raw = await response.text();
   let data = {};
