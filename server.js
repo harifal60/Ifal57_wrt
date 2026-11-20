@@ -91,7 +91,12 @@ function customerStatus(user) {
   const plan = legacyLifetime ? "lifetime" : activePremium ? "premium" : activeTrial ? "trial" : "expired";
   return { email: user.email, plan, trialEndsAt: user.trialEndsAt, premiumExpiresAt: user.premiumExpiresAt || null, createdAt: user.createdAt, canDownload: legacyLifetime || activePremium || activeTrial, deviceBound: !!user.deviceId };
 }
+function isNativeAppRequest(req) {
+  // Header ini hanya dikirim ketika Android WebView memiliki bridge native.
+  return req.get("X-IFAL-Client") === "android-app";
+}
 function requestDeviceId(req) {
+  if (!isNativeAppRequest(req)) return "";
   return String(req.get("X-Device-ID") || req.body?.deviceId || "").trim().slice(0, 200);
 }
 function validDeviceId(value) {
@@ -110,9 +115,7 @@ function requireCustomer(req, res, next) {
   if (!req.session.userId) return res.redirect("/?login=1");
   const user = readUsers().find(item => item.id === req.session.userId);
   if (!user) { req.session.userId = null; return res.redirect("/?login=1"); }
-  // Sesi browser tidak mengikat perangkat. Jika sesi berasal dari APK,
-  // tetap wajib cocok dengan perangkat Android yang terdaftar.
-  if (req.session.deviceId && (!user.deviceId || deviceMismatch(user, req.session.deviceId))) return res.status(403).send("Perangkat tidak cocok dengan lisensi akun ini.");
+  if (!isNativeAppRequest(req) || !user.deviceId || !req.session.deviceId || deviceMismatch(user, req.session.deviceId)) return res.status(403).send("Download APK hanya dapat dilakukan dari aplikasi Android yang terikat ke akun ini.");
   if (!customerStatus(user).canDownload) return res.redirect("/?trial=expired");
   req.customer = user;
   next();
@@ -200,47 +203,43 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/customer/register", async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
+  const nativeApp = isNativeAppRequest(req);
   const deviceId = requestDeviceId(req);
-  if (deviceId && !validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak valid." });
+  if (nativeApp && !validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak terbaca. Tutup lalu buka kembali aplikasi." });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Masukkan alamat email yang valid." });
   if (password.length < 10) return res.status(400).json({ error: "Password minimal 10 karakter." });
   const users = readUsers();
   if (users.some(user => user.email === email)) return res.status(409).json({ error: "Email sudah terdaftar. Silakan login." });
   const now = Date.now();
-  const user = { id: crypto.randomUUID(), email, hash: await bcrypt.hash(password, 12), createdAt: new Date(now).toISOString(), trialEndsAt: new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), plan: "trial", ...(deviceId ? { deviceId, deviceBoundAt: new Date(now).toISOString() } : {}) };
+  const user = { id: crypto.randomUUID(), email, hash: await bcrypt.hash(password, 12), createdAt: new Date(now).toISOString(), trialEndsAt: new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), plan: "trial" };
+  if (nativeApp) { user.deviceId = deviceId; user.deviceBoundAt = new Date(now).toISOString(); }
   users.push(user); writeUsers(users);
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
-  req.session.deviceId = deviceId || null;
+  req.session.deviceId = nativeApp ? deviceId : null;
   res.json({ ok: true, account: customerStatus(user) });
 });
 
 app.post("/api/customer/login", async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
+  const nativeApp = isNativeAppRequest(req);
   const deviceId = requestDeviceId(req);
-  if (deviceId && !validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak valid." });
+  if (nativeApp && !validDeviceId(deviceId)) return res.status(400).json({ error: "ID perangkat tidak terbaca. Tutup lalu buka kembali aplikasi." });
   const users = readUsers();
   const user = users.find(item => item.email === email);
   if (!user || !(await bcrypt.compare(password, user.hash))) return res.status(401).json({ error: "Email atau password salah." });
-  if (deviceId) {
-    // ID browser lama (web-...) bukan ikatan perangkat Android; migrasikan
-    // otomatis ke ANDROID_ID saat pengguna pertama kali login dari APK.
-    if (user.deviceId && String(user.deviceId).startsWith("web-")) {
-      user.deviceId = deviceId;
-      user.deviceBoundAt = new Date().toISOString();
-      writeUsers(users);
-    } else if (deviceMismatch(user, deviceId)) {
-      return res.status(403).json({ error: "Akun ini sudah terikat ke perangkat Android lain. Hubungi admin untuk reset atau pindah perangkat." });
-    } else if (!user.deviceId) {
-      user.deviceId = deviceId;
-      user.deviceBoundAt = new Date().toISOString();
-      writeUsers(users);
+  if (nativeApp) {
+    // ID browser lama (web-...) bukan ikatan perangkat Android; migrasikan saat APK login.
+    if (user.deviceId && !String(user.deviceId).startsWith("web-") && deviceMismatch(user, deviceId)) {
+      return res.status(403).json({ error: "Perangkat Android ini sudah terikat ke akun lain atau akun ini terikat ke perangkat lain. Hubungi admin untuk reset perangkat." });
     }
+    // Hanya login dari APK Android yang boleh membuat atau memeriksa ikatan perangkat.
+    if (!user.deviceId || String(user.deviceId).startsWith("web-")) { user.deviceId = deviceId; user.deviceBoundAt = new Date().toISOString(); writeUsers(users); }
   }
   await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
   req.session.userId = user.id;
-  req.session.deviceId = deviceId || null;
+  req.session.deviceId = nativeApp ? deviceId : null;
   res.json({ ok: true, account: customerStatus(user) });
 });
 
@@ -334,6 +333,7 @@ app.post("/api/customer/payment-request", (req, res) => {
   const payments = readPayments();
   const pending = payments.find(item => item.userId === user.id && item.status === "pending");
   if (pending) return res.json({ ok: true, payment: pending });
+  if (!isNativeAppRequest(req) || !user.deviceId || !req.session.deviceId || deviceMismatch(user, req.session.deviceId)) return res.status(403).json({ error: "Permintaan Premium hanya dapat dilakukan dari aplikasi Android yang terikat ke akun ini." });
   const payment = { id: crypto.randomUUID(), userId: user.id, email: user.email, deviceId: user.deviceId, amount: PREMIUM_PRICE, durationDays: PREMIUM_DAYS, status: "pending", createdAt: new Date().toISOString() };
   payments.push(payment); writePayments(payments);
   res.json({ ok: true, payment });
