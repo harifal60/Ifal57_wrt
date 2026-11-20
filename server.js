@@ -347,6 +347,18 @@ app.post("/api/admin/payments/:id/approve", isAdmin, (req, res) => {
   res.json({ ok: true, payment, account: customerStatus(user) });
 });
 
+app.post("/api/admin/payments/:id/reject", isAdmin, (req, res) => {
+  const payments = readPayments();
+  const payment = payments.find(item => item.id === req.params.id);
+  if (!payment) return res.status(404).json({ error: "Permintaan tidak ditemukan." });
+  if (payment.status !== "pending") return res.status(400).json({ error: "Permintaan ini sudah diproses." });
+  payment.status = "rejected";
+  payment.rejectedAt = new Date().toISOString();
+  payment.rejectedBy = req.session.admin;
+  writePayments(payments);
+  res.json({ ok: true, payment });
+});
+
 app.post("/api/admin/users/:id/reset-device", isAdmin, (req, res) => {
   const users = readUsers();
   const user = users.find(item => item.id === req.params.id);
