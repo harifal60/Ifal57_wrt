@@ -894,3 +894,90 @@ body.customer-logged-in #catalog{margin-top:24px}
 .about-device{margin:20px 28px 0;padding:15px 16px;border:1px solid #e4eeeb;border-radius:14px;background:#fff}.about-device p{margin:7px 0 0;color:#657d76;font-size:12px}
 .about-disclaimer{margin:17px 28px 0;color:#93a29e;font-size:10px;line-height:1.6}.about-close-button{display:block;width:calc(100% - 56px);margin:18px 28px 24px;padding:12px;border:1px solid #dce9e5;border-radius:12px;background:#fff;color:#48645e;font-weight:800;cursor:pointer}
 @media(max-width:520px){.about-hero{padding:26px 20px 21px;gap:12px}.about-brand-mark{flex-basis:52px;width:52px;height:52px;border-radius:16px;font-size:23px}.about-section{padding:18px 20px 0}.about-support{margin:20px 20px 0;padding:15px;gap:11px}.about-device{margin:18px 20px 0}.about-disclaimer{margin:15px 20px 0}.about-close-button{width:calc(100% - 40px);margin:16px 20px 20px}.about-dialog>.close{margin-right:10px}}
+
+/* IFAL57_WRT — perlebar popup Kelola Aplikasi / Dashboard Admin */
+#adminDialog {
+  box-sizing: border-box;
+  width: min(96vw, 900px);
+  max-width: 900px;
+  max-height: 90vh;
+  padding: 26px;
+}
+#adminDialog .admin-dashboard {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 14px 0 12px;
+}
+#adminDialog .admin-shortcuts,
+#adminDialog .dashboard-cards {
+  width: 100%;
+}
+@media (max-width: 560px) {
+  #adminDialog {
+    width: calc(100vw - 16px);
+    max-width: none;
+    max-height: 92vh;
+    padding: 20px 14px;
+    border-radius: 18px;
+  }
+  #adminDialog .admin-dashboard {
+    padding: 16px 12px;
+    margin: 12px 0 8px;
+  }
+  #adminDialog .admin-shortcuts { gap: 9px; }
+  #adminDialog .admin-shortcut { min-width: 0; padding: 12px; }
+}
+
+
+/* IFAL57_WRT — warna Dashboard Admin lebih kalem (khusus popup admin) */
+#adminDialog {
+  color: #263640;
+  background: #f2f5f6;
+  border-color: #d5dfe3;
+}
+#adminDialog h2 { color: #263b48; }
+#adminDialog #adminIntro { color: #687b86; }
+#adminDialog .admin-dashboard {
+  background: linear-gradient(160deg, #edf2f3, #e8eef0);
+  border-color: #d4dfe2;
+  box-shadow: 0 8px 22px #263d480c;
+}
+#adminDialog .popup-admin-brand h3 { color: #263d49; }
+#adminDialog .popup-admin-brand p { color: #71818a; }
+#adminDialog .dashboard-kicker { color: #547a76; }
+#adminDialog .admin-shortcut {
+  box-shadow: 0 5px 13px #233b4418;
+}
+#adminDialog .upload-shortcut {
+  background: linear-gradient(135deg, #527d75, #426b65);
+}
+#adminDialog .premium-shortcut {
+  background: linear-gradient(135deg, #557b89, #456b79);
+}
+#adminDialog .admin-shortcut small { color: #e8eff0; }
+#adminDialog .stats-heading h4 { color: #344b57; }
+#adminDialog .dashboard-stat {
+  background: #f9fbfb;
+  border-color: #dbe4e7;
+}
+#adminDialog .dashboard-stat span { color: #71818a; }
+#adminDialog .dashboard-stat strong { color: #527a74; }
+#adminDialog .admin-more {
+  background: #f9fbfb;
+  border-color: #d9e3e5;
+}
+#adminDialog .admin-more summary { color: #405965; }
+#adminDialog .admin-more summary:after { color: #5b817a; }
+#adminDialog .admin-upload-area {
+  background: #f9fbfb;
+  border-color: #d9e3e5;
+}
+#adminDialog .dashboard-refresh {
+  border-color: #d4dfe3;
+  background: #f7f9fa;
+  color: #526b77;
+}
+#adminDialog .dashboard-refresh:hover {
+  background: #e7edef;
+}
