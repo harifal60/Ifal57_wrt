@@ -981,3 +981,29 @@ body.customer-logged-in #catalog{margin-top:24px}
 #adminDialog .dashboard-refresh:hover {
   background: #e7edef;
 }
+
+
+/* IFAL57_WRT — posisikan popup admin lebih dekat ke atas layar */
+#adminDialog[open] {
+  margin: 2vh auto auto;
+  max-height: 96vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@supports (height: 100dvh) {
+  #adminDialog[open] {
+    margin-top: 2dvh;
+    max-height: 96dvh;
+  }
+}
+@media (max-width: 560px) {
+  #adminDialog[open] {
+    margin: 10px auto auto;
+    max-height: calc(100vh - 20px);
+  }
+  @supports (height: 100dvh) {
+    #adminDialog[open] {
+      max-height: calc(100dvh - 20px);
+    }
+  }
+}
