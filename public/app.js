@@ -104,10 +104,9 @@ function ensureAdminDashboard() {
     </div>
     <div class="stats-heading"><h4>Statistik Singkat</h4></div>
     <div class="dashboard-cards" id="dashboardCards"></div>
-    <details class="admin-more"><summary>Analitik & riwayat unduhan</summary>
+    <details class="admin-more"><summary>Analitik unduhan</summary>
       <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Unduhan 7 hari terakhir</strong><span>Harian</span></div><div class="dashboard-chart" id="dashboardChart"></div></div>
       <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Aplikasi terpopuler</strong><span>Top 5</span></div><div class="dashboard-ranking" id="dashboardRanking"></div></div>
-      <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Riwayat unduhan</strong><span id="historyCount">Terbaru</span></div><div class="download-history" id="downloadHistory"></div></div>
     </details>
     <details class="admin-more" id="adminUsersPanel"><summary>Daftar Pengguna & Device ID <button type="button" id="refreshUsers" class="dashboard-refresh">Refresh</button></summary><div id="registeredUsers" class="download-history"></div></details>
     <details class="admin-more" id="adminPaymentsPanel"><summary>Permintaan Premium 30 Hari <button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></summary><div id="paymentRequests" class="download-history"></div></details>
@@ -165,7 +164,6 @@ async function loadAdminStats() {
   try {
     const stats = await request("/api/admin/stats", { cache: "no-store" });
     renderAdminStats(stats);
-    await loadDownloadHistory();
     await loadRegisteredUsers();
     await loadPaymentRequests();
   } catch (error) {
@@ -173,31 +171,6 @@ async function loadAdminStats() {
   }
 }
 
-function renderDownloadHistory(data) {
-  const container = $("#downloadHistory");
-  const count = $("#historyCount");
-  if (!container) return;
-  const history = Array.isArray(data.history) ? data.history : [];
-  if (count) count.textContent = `${Number(data.total || 0).toLocaleString("id-ID")} tercatat`;
-  if (!history.length) {
-    container.innerHTML = '<p class="dashboard-empty">Belum ada riwayat unduhan. Riwayat akan muncul setelah APK berhasil diunduh.</p>';
-    return;
-  }
-  container.innerHTML = history.map(item => {
-    const date = new Date(item.date);
-    const dateText = Number.isNaN(date.getTime())
-      ? "Waktu tidak tersedia"
-      : date.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
-    return `<div class="history-row">
-      <span class="history-download-icon">↓</span>
-      <div class="history-info">
-        <strong>${esc(item.appName || "Aplikasi")}</strong>
-        <small>${esc(dateText)}</small>
-      </div>
-      <span class="history-status">Unduh</span>
-    </div>`;
-  }).join("");
-}
 
 async function loadRegisteredUsers() {
   const container = $("#registeredUsers"); if (!container) return;
@@ -230,16 +203,6 @@ async function loadPaymentRequests() {
 }
 
 
-async function loadDownloadHistory() {
-  const container = $("#downloadHistory");
-  if (container) container.innerHTML = '<p class="dashboard-empty">Memuat riwayat...</p>';
-  try {
-    const data = await request("/api/admin/history?limit=50", { cache: "no-store" });
-    renderDownloadHistory(data);
-  } catch (error) {
-    if (container) container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Riwayat belum bisa dimuat.")}</p>`;
-  }
-}
 
 function setAdminIntro(message) {
   let intro = $("#adminIntro");
