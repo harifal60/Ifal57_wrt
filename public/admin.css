@@ -184,58 +184,79 @@
 @media(max-width:600px){.user-actions{width:100%;justify-content:flex-start}.user-actions button{flex:1}}
 
 
-/* IFAL57_WRT: tombol hapus akun berupa ikon tempat sampah merah */
-.user-admin-actions{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:8px;
-  flex-wrap:wrap;
+/* IFAL57_WRT - force visible red trash icon; cache-busted in admin.html */
+.admin-page .user-admin-actions .user-delete-icon,
+.admin-page .user-admin-actions button.user-delete-icon{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  box-sizing:border-box !important;
+  display:inline-flex !important;
+  flex:0 0 42px !important;
+  width:42px !important;
+  min-width:42px !important;
+  max-width:42px !important;
+  height:42px !important;
+  min-height:42px !important;
+  max-height:42px !important;
+  padding:9px !important;
+  margin:0 !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+  border:0 !important;
+  border-radius:11px !important;
+  background:#ef3434 !important;
+  color:#fff !important;
+  box-shadow:0 3px 8px rgba(239,52,52,.2) !important;
+  line-height:1 !important;
+  font-size:0 !important;
+  cursor:pointer !important;
 }
-.user-admin-actions [data-reset-device]{
-  white-space:nowrap;
+.admin-page .user-admin-actions .user-delete-icon:hover{
+  background:#d92323 !important;
 }
-.user-admin-actions .user-delete-icon{
-  display:inline-flex;
-  flex:0 0 42px;
-  align-items:center;
-  justify-content:center;
-  width:42px;
-  height:42px;
-  padding:0;
-  border:0;
-  border-radius:11px;
-  background:#ef3434;
-  color:#fff;
-  cursor:pointer;
-  box-shadow:0 3px 8px rgba(239,52,52,.18);
-  transition:background .15s ease, transform .15s ease, opacity .15s ease;
+.admin-page .user-admin-actions .user-delete-icon:disabled{
+  opacity:.55 !important;
+  cursor:wait !important;
 }
-.user-admin-actions .user-delete-icon:hover{
-  background:#d92323;
-  transform:translateY(-1px);
+.admin-page .user-admin-actions .user-delete-icon svg{
+  display:block !important;
+  flex:0 0 24px !important;
+  width:24px !important;
+  min-width:24px !important;
+  height:24px !important;
+  min-height:24px !important;
+  fill:none !important;
+  stroke:#fff !important;
+  stroke-width:2 !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
 }
-.user-admin-actions .user-delete-icon:disabled{
-  cursor:wait;
-  opacity:.55;
+.admin-page .user-admin-actions{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+  flex-wrap:nowrap !important;
 }
-.user-admin-actions .user-delete-icon svg{
-  display:block;
-  width:22px;
-  height:22px;
-  fill:none;
-  stroke:currentColor;
-  stroke-width:2;
-  stroke-linecap:round;
-  stroke-linejoin:round;
+.admin-page .user-admin-actions [data-reset-device]{
+  white-space:nowrap !important;
 }
 @media(max-width:600px){
-  .user-admin-actions{
-    gap:7px;
+  .admin-page .user-admin-actions .user-delete-icon,
+  .admin-page .user-admin-actions button.user-delete-icon{
+    flex-basis:40px !important;
+    width:40px !important;
+    min-width:40px !important;
+    max-width:40px !important;
+    height:40px !important;
+    min-height:40px !important;
+    max-height:40px !important;
   }
-  .user-admin-actions .user-delete-icon{
-    flex-basis:40px;
-    width:40px;
-    height:40px;
+  .admin-page .user-admin-actions .user-delete-icon svg{
+    width:22px !important;
+    min-width:22px !important;
+    height:22px !important;
+    min-height:22px !important;
   }
 }
