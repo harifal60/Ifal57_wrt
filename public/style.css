@@ -1007,3 +1007,47 @@ body.customer-logged-in #catalog{margin-top:24px}
     }
   }
 }
+
+
+/* IFAL57_WRT — clean minimal 57 brand mark; visual-only */
+:root { --brand-ink:#031b1a; --brand-teal:#00cdbb; --brand-teal-deep:#087e75; }
+.brandmark,
+.footer-mark,
+.about-brand-mark {
+  color:#fff;
+  background:linear-gradient(145deg,#062c2a,#031514 72%);
+  border:1.5px solid #00cdbb;
+  box-shadow:0 5px 16px #00a99a24, inset 0 0 0 1px #ffffff08;
+  letter-spacing:-1.5px;
+}
+.brandmark {
+  border-radius:15px;
+  font-size:22px;
+  font-weight:900;
+  text-shadow:0 0 14px #00d8c455;
+}
+.footer-mark { border-radius:10px; }
+.about-brand-mark {
+  border-radius:17px;
+  color:#fff;
+  font-size:25px;
+  font-weight:900;
+}
+.app-logo {
+  transform:none;
+  border:2px solid #00cdbb;
+  border-radius:28px;
+  background:linear-gradient(145deg,#062c2a,#031514 72%);
+  box-shadow:0 12px 30px #00a99a24,inset 0 0 0 1px #ffffff08;
+  color:#fff;
+  letter-spacing:-2px;
+  text-shadow:0 0 18px #00d8c455;
+}
+.app-logo span {
+  color:#00d7c6;
+  font-size:12px;
+  letter-spacing:-.3px;
+}
+@media(max-width:600px){
+  .brandmark{width:44px;height:44px;font-size:21px}
+}
