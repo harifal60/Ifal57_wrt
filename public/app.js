@@ -191,7 +191,11 @@ async function loadRegisteredUsers() {
     container.innerHTML = users.map(user => {
       const plan = user.plan === "lifetime" ? "Premium lama (Lifetime)" : user.plan === "premium" ? "Premium 30 hari" : user.plan === "trial" ? "Trial aktif" : "Trial berakhir";
       const created = user.createdAt ? new Date(user.createdAt).toLocaleString("id-ID") : "—";
-      return `<div class="history-row"><div class="history-info"><strong>${esc(user.email)}</strong><small>${esc(plan)} · Daftar: ${esc(created)}<br>Device ID: ${esc(user.deviceId || "Belum terikat")}</small></div><button type="button" class="text-button" data-reset-device="${esc(user.id)}">Reset perangkat</button></div>`;
+      const appAccess = user.appAccessPending
+        ? `<br><span class="history-status">Menunggu persetujuan login aplikasi</span><br><small>Device ID aplikasi: ${esc(user.appAccessDeviceId || "—")}</small>`
+        : user.appAccessApproved ? '<br><span class="history-status">Login aplikasi disetujui</span>' : "";
+      const approveButton = user.appAccessPending ? `<button type="button" class="primary" data-approve-app-access="${esc(user.id)}">Setujui login aplikasi</button>` : "";
+      return `<div class="history-row"><div class="history-info"><strong>${esc(user.email)}</strong><small>${esc(plan)} · Daftar: ${esc(created)}<br>Device ID: ${esc(user.deviceId || user.browserDeviceId || "Belum terikat")}${appAccess}</small></div><div class="user-admin-actions">${approveButton}<button type="button" class="text-button" data-reset-device="${esc(user.id)}">Reset perangkat</button><button type="button" class="danger-button" data-delete-user="${esc(user.id)}">Hapus akun</button></div></div>`;
     }).join("");
   } catch (error) { container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Daftar pengguna tidak dapat dimuat.")}</p>`; }
 }
@@ -415,6 +419,40 @@ document.addEventListener("click", async (event) => {
   if (event.target.closest("#refreshPayments")) loadPaymentRequests();
   const approve = event.target.closest("[data-approve-payment]");
   if (approve) { approve.disabled = true; try { await request(`/api/admin/payments/${encodeURIComponent(approve.dataset.approvePayment)}/approve`, { method: "POST" }); await loadPaymentRequests(); await loadApps(); setMessage("Pembayaran disetujui. Premium aktif selama 30 hari.", "success"); } catch (error) { approve.disabled = false; setMessage(error.message, "error"); } }
+  const approveApp = event.target.closest("[data-approve-app-access]");
+  if (approveApp) {
+    if (!confirm("Setujui akun ini agar bisa login melalui aplikasi Android pada Device ID yang diminta?")) return;
+    approveApp.disabled = true;
+    approveApp.textContent = "Menyetujui...";
+    try {
+      await request(`/api/admin/users/${encodeURIComponent(approveApp.dataset.approveAppAccess)}/approve-app-access`, { method: "POST" });
+      await loadRegisteredUsers();
+      setMessage("Akses login aplikasi disetujui. Pengguna sekarang bisa login di Android.", "success");
+    } catch (error) {
+      approveApp.disabled = false;
+      approveApp.textContent = "Setujui login aplikasi";
+      setMessage(error.message || "Gagal menyetujui akses aplikasi.", "error");
+    }
+    return;
+  }
+  const deleteUser = event.target.closest("[data-delete-user]");
+  if (deleteUser) {
+    if (!confirm("Sembunyikan akun ini dari daftar admin? Akun dan password tetap tersimpan. Pengguna bisa login kembali dengan email dan password yang sama.")) return;
+    deleteUser.disabled = true;
+    deleteUser.textContent = "Menghapus...";
+    try {
+      await request(`/api/admin/users/${encodeURIComponent(deleteUser.dataset.deleteUser)}`, { method: "DELETE" });
+      await loadRegisteredUsers();
+      await loadPaymentRequests();
+      await loadAdminStats();
+      setMessage("Akun disembunyikan dari daftar admin. Pengguna tetap bisa login lagi dengan email dan password lama.", "success");
+    } catch (error) {
+      deleteUser.disabled = false;
+      deleteUser.textContent = "Hapus akun";
+      setMessage(error.message || "Gagal menghapus akun.", "error");
+    }
+    return;
+  }
   const reset = event.target.closest("[data-reset-device]");
   if (reset) {
     if (!confirm("Reset ikatan perangkat akun ini? Akun akan terikat ke perangkat berikutnya saat login.")) return;
