@@ -14,7 +14,7 @@ async function loadPayments(){
     return `<article class="payment-card">
       <div class="payment-main">
         <div class="payment-email">${esc(x.email||'Akun pelanggan')}</div>
-        <div class="payment-meta"><span>Premium Lifetime</span><span>Rp${Number(x.amount||25000).toLocaleString('id-ID')}</span><span>${esc(date)}</span></div>
+        <div class="payment-meta"><span>Premium 30 Hari</span><span>Rp${Number(x.amount||25000).toLocaleString('id-ID')}</span><span>${esc(date)}</span></div>
         <span class="payment-status ${esc(x.status)}">${status}</span>
       </div>
       <div class="payment-actions">
@@ -24,7 +24,7 @@ async function loadPayments(){
     </article>`;
   }).join(''):'<p class="admin-empty">Belum ada permintaan.</p>'
 }
-async function loadUsers(){const d=await api('/api/admin/users',{cache:'no-store'}),u=d.users||[];$('#adminUsers').innerHTML=u.length?u.map(x=>`<div class="history-row"><div class="history-info"><strong>${esc(x.email)}</strong><small>${esc(x.plan==='lifetime'?'Premium permanen':x.plan==='trial'?'Trial aktif':'Trial berakhir')} · Daftar: ${esc(x.createdAt?new Date(x.createdAt).toLocaleString('id-ID'):'—')}<br>Device ID: ${esc(x.deviceId||'Belum terikat')}</small></div><button class="text-button" data-reset-device="${esc(x.id)}">Reset perangkat</button></div>`).join(''):'<p class="admin-empty">Belum ada pengguna.</p>'}
+async function loadUsers(){const d=await api('/api/admin/users',{cache:'no-store'}),u=d.users||[];$('#adminUsers').innerHTML=u.length?u.map(x=>`<div class="history-row"><div class="history-info"><strong>${esc(x.email)}</strong><small>${esc(x.plan==='lifetime'?'Premium lama (Lifetime)':x.plan==='premium'?'Premium 30 hari':x.plan==='trial'?'Trial aktif':'Trial berakhir')} · Daftar: ${esc(x.createdAt?new Date(x.createdAt).toLocaleString('id-ID'):'—')}<br>Device ID: ${esc(x.deviceId||'Belum terikat')}</small></div><button class="text-button" data-reset-device="${esc(x.id)}">Reset perangkat</button></div>`).join(''):'<p class="admin-empty">Belum ada pengguna.</p>'}
 async function loadHistory(){const d=await api('/api/admin/history?limit=50',{cache:'no-store'}),h=d.history||[];$('#adminHistory').innerHTML=h.length?h.map(x=>`<div class="history-row"><div class="history-info"><strong>${esc(x.appName||'Aplikasi')}</strong><small>${esc(new Date(x.date).toLocaleString('id-ID'))}</small></div><span class="history-status">Unduh</span></div>`).join(''):'<p class="admin-empty">Belum ada riwayat download.</p>'}
 async function loadPage(name){try{if(name==='overview')await loadStats();if(name==='apps')await loadApps();if(name==='payments')await loadPayments();if(name==='users')await loadUsers();if(name==='history')await loadHistory()}catch(e){const target={overview:$('#statsChart'),apps:$('#adminApps'),payments:$('#adminPayments'),users:$('#adminUsers'),history:$('#adminHistory')}[name];if(target)target.innerHTML=`<p class="admin-empty">${esc(e.message)}</p>`}}
 async function enter(){ $('#adminLogin').hidden=true;$('#adminApp').hidden=false;showPage('overview') }

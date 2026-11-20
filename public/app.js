@@ -110,7 +110,7 @@ function ensureAdminDashboard() {
       <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Riwayat unduhan</strong><span id="historyCount">Terbaru</span></div><div class="download-history" id="downloadHistory"></div></div>
     </details>
     <details class="admin-more" id="adminUsersPanel"><summary>Daftar Pengguna & Device ID <button type="button" id="refreshUsers" class="dashboard-refresh">Refresh</button></summary><div id="registeredUsers" class="download-history"></div></details>
-    <details class="admin-more" id="adminPaymentsPanel"><summary>Permintaan Premium Lifetime <button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></summary><div id="paymentRequests" class="download-history"></div></details>
+    <details class="admin-more" id="adminPaymentsPanel"><summary>Permintaan Premium 30 Hari <button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></summary><div id="paymentRequests" class="download-history"></div></details>
     <div id="adminUploadArea" class="admin-upload-area" hidden></div>`;
   const intro = $("#adminIntro");
   const uploadForm = $("#uploadForm");
@@ -205,12 +205,12 @@ async function loadRegisteredUsers() {
   try {
     const data = await request("/api/admin/users", { cache: "no-store" });
     const users = Array.isArray(data.users) ? data.users : [];
-    const premiumCount = users.filter(user => user.plan === "lifetime").length;
+    const premiumCount = users.filter(user => user.plan === "lifetime" || user.plan === "premium").length;
     const premiumNode = $("#premiumUserCount");
     if (premiumNode) premiumNode.textContent = premiumCount.toLocaleString("id-ID");
     if (!users.length) { container.innerHTML = '<p class="dashboard-empty">Belum ada pengguna terdaftar.</p>'; return; }
     container.innerHTML = users.map(user => {
-      const plan = user.plan === "lifetime" ? "Premium permanen" : user.plan === "trial" ? "Trial aktif" : "Trial berakhir";
+      const plan = user.plan === "lifetime" ? "Premium lama (Lifetime)" : user.plan === "premium" ? "Premium 30 hari" : user.plan === "trial" ? "Trial aktif" : "Trial berakhir";
       const created = user.createdAt ? new Date(user.createdAt).toLocaleString("id-ID") : "—";
       return `<div class="history-row"><div class="history-info"><strong>${esc(user.email)}</strong><small>${esc(plan)} · Daftar: ${esc(created)}<br>Device ID: ${esc(user.deviceId || "Belum terikat")}</small></div><button type="button" class="text-button" data-reset-device="${esc(user.id)}">Reset perangkat</button></div>`;
     }).join("");
@@ -225,7 +225,7 @@ async function loadPaymentRequests() {
     const payments = Array.isArray(data.payments) ? data.payments : [];
     const pending = payments.filter(p => p.status === "pending");
     if (!payments.length) { container.innerHTML = '<p class="dashboard-empty">Belum ada permintaan pembayaran.</p>'; return; }
-    container.innerHTML = payments.map(p => `<div class="history-row"><div class="history-info"><strong>${esc(p.email)}</strong><small>Rp${Number(p.amount || 25000).toLocaleString("id-ID")} · ${esc(new Date(p.createdAt).toLocaleString("id-ID"))}<br>Device ID: ${esc(p.deviceId || "Belum tercatat")}</small></div><span class="history-status">${p.status === "approved" ? "Lifetime aktif" : "Menunggu"}</span>${p.status === "pending" ? `<button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button>` : ""}<button type="button" class="text-button" data-reset-device="${esc(p.userId)}">Reset perangkat</button></div>`).join("");
+    container.innerHTML = payments.map(p => `<div class="history-row"><div class="history-info"><strong>${esc(p.email)}</strong><small>Rp${Number(p.amount || 25000).toLocaleString("id-ID")} · ${esc(new Date(p.createdAt).toLocaleString("id-ID"))}<br>Device ID: ${esc(p.deviceId || "Belum tercatat")}</small></div><span class="history-status">${p.status === "approved" ? "Premium 30 hari aktif" : "Menunggu"}</span>${p.status === "pending" ? `<button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button>` : ""}<button type="button" class="text-button" data-reset-device="${esc(p.userId)}">Reset perangkat</button></div>`).join("");
   } catch (error) { container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Permintaan tidak dapat dimuat.")}</p>`; }
 }
 
@@ -324,7 +324,7 @@ function renderApps() {
 function ensurePremiumDialog() {
   if (document.querySelector("#premiumDialog")) return;
   const dialog = document.createElement("dialog"); dialog.id = "premiumDialog";
-  dialog.innerHTML = `<button class="close" id="closePremium">✕</button><h2>IFAL57_WRT Premium</h2><p class="section-sub"><strong>Rp25.000 · Sekali bayar · Lifetime</strong></p><div style="text-align:center"><img src="/qris.png" alt="QRIS IFAL57 STORE" style="width:min(100%,300px);border-radius:12px;background:white"><p>Scan QRIS di atas untuk membayar Rp25.000.</p></div><p id="premiumStatus" class="message">Login untuk mengajukan aktivasi Premium.</p><button class="primary" id="requestPayment">Saya sudah membayar</button><p class="section-sub">Aktivasi dilakukan admin setelah pembayaran diverifikasi.</p>`;
+  dialog.innerHTML = `<button class="close" id="closePremium">✕</button><h2>IFAL57_WRT Premium</h2><p class="section-sub"><strong>Rp25.000 · Premium 30 hari</strong></p><div style="text-align:center"><img src="/qris.png" alt="QRIS IFAL57 STORE" style="width:min(100%,300px);border-radius:12px;background:white"><p>Scan QRIS di atas untuk membayar Rp25.000.</p></div><p id="premiumStatus" class="message">Login untuk mengajukan aktivasi Premium.</p><button class="primary" id="requestPayment">Saya sudah membayar</button><p class="section-sub">Premium aktif selama 30 hari setelah admin memverifikasi pembayaran.</p>`;
   document.body.appendChild(dialog);
   dialog.querySelector("#closePremium").addEventListener("click", () => dialog.close());
   dialog.querySelector("#requestPayment").addEventListener("click", async () => {
@@ -349,11 +349,12 @@ function renderCustomerAccount() {
   }
   bar.hidden = false;
   const expiry = customerAccount.trialEndsAt ? new Date(customerAccount.trialEndsAt) : null;
+  const premiumExpiry = customerAccount.premiumExpiresAt ? new Date(customerAccount.premiumExpiresAt) : null;
   const remainingDays = customerAccount.plan === "trial" && expiry
     ? Math.max(0, Math.ceil((expiry.getTime() - Date.now()) / 86400000)) : 0;
-  const isPremium = customerAccount.plan === "lifetime";
+  const isPremium = customerAccount.plan === "lifetime" || customerAccount.plan === "premium";
   const isTrial = customerAccount.plan === "trial";
-  const status = isPremium ? "Premium Lifetime" : isTrial ? "Trial Aktif" : "Trial Berakhir";
+  const status = isPremium ? (customerAccount.plan === "lifetime" ? "Premium Lifetime" : "Premium Aktif") : isTrial ? "Trial Aktif" : "Trial Berakhir";
   const dateLabel = expiry && !Number.isNaN(expiry.getTime())
     ? expiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—";
   const daysLabel = remainingDays > 1 ? `${remainingDays} hari tersisa`
@@ -374,8 +375,8 @@ function renderCustomerAccount() {
           <span>STATUS LANGGANAN</span>
           <span class="status-pill">${status}</span>
         </div>
-        <strong class="customer-plan-title">${isPremium ? "Premium Lifetime" : isTrial ? `${remainingDays} hari tersisa` : "Trial telah berakhir"}</strong>
-        <p>${isPremium ? "Akun Anda memiliki akses Premium tanpa batas waktu." : isTrial ? `Trial gratis berakhir pada ${dateLabel}.` : "Aktifkan Premium untuk melanjutkan akses unduhan."}</p>
+        <strong class="customer-plan-title">${isPremium ? (customerAccount.plan === "lifetime" ? "Premium Lifetime" : "Premium 30 hari") : isTrial ? `${remainingDays} hari tersisa` : "Trial telah berakhir"}</strong>
+        <p>${isPremium ? (customerAccount.plan === "lifetime" ? "Akun Anda memiliki akses Premium tanpa batas waktu." : `Premium berakhir pada ${premiumExpiry ? premiumExpiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "30 hari setelah aktivasi"}.`) : isTrial ? `Trial gratis berakhir pada ${dateLabel}.` : "Aktifkan Premium untuk melanjutkan akses unduhan."}</p>
         ${isTrial ? `<div class="trial-progress"><span style="width:${Math.max(0,Math.min(100,remainingDays/7*100))}%"></span></div>` : ""}
         ${!isPremium ? `<button type="button" id="openPremium" class="primary customer-upgrade">${isTrial ? "Lihat Premium · Rp25.000" : "Aktifkan Premium · Rp25.000"}</button>` : ""}
       </section>
@@ -383,20 +384,12 @@ function renderCustomerAccount() {
         <span>● Perangkat ${customerAccount.deviceBound ? "terhubung" : "belum terhubung"}</span>
         <span>● Katalog ${customerAccount.canDownload ? "tersedia" : "dibatasi"}</span>
       </div>
-      <section class="customer-history-card">
-        <div class="customer-section-heading">
-          <h3>Riwayat download</h3>
-          <span class="history-count" id="customerHistoryCount">—</span>
-        </div>
-        <div id="customerHistoryList" class="customer-history-list"><p class="history-empty">Memuat riwayat...</p></div>
-      </section>
       <div class="customer-compact-actions">
         <button type="button" id="browseCatalog" class="catalog-cta"><strong>Buka katalog aplikasi</strong><span>→</span></button>
         <button type="button" id="customerLogout" class="customer-logout">Keluar</button>
       </div>
     </div>`;
   $("#userBtn").textContent = isPremium ? "Premium aktif" : "Akun saya";
-  loadCustomerHistory();
 }
 async function refreshCustomer() {
   try { const data = await request("/api/customer/me", { cache: "no-store" }); customerAccount = data.account || null; }
@@ -428,7 +421,7 @@ document.addEventListener("click", async (event) => {
   if (event.target.closest("#openPremium")) openPremiumDialog();
   if (event.target.closest("#refreshPayments")) loadPaymentRequests();
   const approve = event.target.closest("[data-approve-payment]");
-  if (approve) { approve.disabled = true; try { await request(`/api/admin/payments/${encodeURIComponent(approve.dataset.approvePayment)}/approve`, { method: "POST" }); await loadPaymentRequests(); await loadApps(); setMessage("Pembayaran disetujui dan akun menjadi Lifetime.", "success"); } catch (error) { approve.disabled = false; setMessage(error.message, "error"); } }
+  if (approve) { approve.disabled = true; try { await request(`/api/admin/payments/${encodeURIComponent(approve.dataset.approvePayment)}/approve`, { method: "POST" }); await loadPaymentRequests(); await loadApps(); setMessage("Pembayaran disetujui. Premium aktif selama 30 hari.", "success"); } catch (error) { approve.disabled = false; setMessage(error.message, "error"); } }
   const reset = event.target.closest("[data-reset-device]");
   if (reset) {
     if (!confirm("Reset ikatan perangkat akun ini? Akun akan terikat ke perangkat berikutnya saat login.")) return;
