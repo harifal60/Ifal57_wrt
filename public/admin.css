@@ -175,3 +175,10 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Tombol penghapusan akun pelanggan */
+.user-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.user-delete{padding:9px 13px;border:1px solid #f0caca;border-radius:10px;background:#fff;color:#b33c3c;font-weight:800;cursor:pointer;min-height:40px}
+.user-delete:hover{background:#fff3f3}
+.user-delete:disabled{opacity:.6;cursor:wait}
+@media(max-width:600px){.user-actions{width:100%;justify-content:flex-start}.user-actions button{flex:1}}
