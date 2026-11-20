@@ -342,22 +342,52 @@ function setCustomerMessage(message, type = "info") {
 
 function renderCustomerAccount() {
   const bar = $("#accountBar");
-  if (!customerAccount) { bar.hidden = true; $("#userBtn").textContent = "Login / Daftar"; return; }
-  bar.hidden = false;
-  let status = "TRIAL BERAKHIR";
-  if (customerAccount.plan === "lifetime") {
-    status = "PREMIUM PERMANEN";
-  } else if (customerAccount.plan === "trial") {
-    const expiry = new Date(customerAccount.trialEndsAt);
-    const remainingMs = expiry.getTime() - Date.now();
-    const remainingDays = Math.max(0, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
-    const remainingLabel = remainingDays > 1 ? `Sisa ${remainingDays} hari` : remainingDays === 1 ? "Sisa 1 hari" : "Berakhir hari ini";
-    status = `${remainingLabel} · Exp: ${expiry.toLocaleDateString("id-ID")}`;
+  if (!customerAccount) {
+    bar.hidden = true;
+    $("#userBtn").textContent = "Login / Daftar";
+    return;
   }
-  bar.innerHTML = `<div><strong>${esc(customerAccount.email)}</strong><small>${esc(status)}</small></div>${customerAccount.plan === "expired" ? `<button type="button" id="openPremium" class="primary">Premium Rp25.000</button>` : ""}<button type="button" id="customerLogout" class="text-button">Keluar</button>`;
-  $("#userBtn").textContent = customerAccount.plan === "lifetime" ? "Premium aktif" : "Akun saya";
+  bar.hidden = false;
+  const expiry = customerAccount.trialEndsAt ? new Date(customerAccount.trialEndsAt) : null;
+  const remainingDays = customerAccount.plan === "trial" && expiry
+    ? Math.max(0, Math.ceil((expiry.getTime() - Date.now()) / 86400000)) : 0;
+  const isPremium = customerAccount.plan === "lifetime";
+  const isTrial = customerAccount.plan === "trial";
+  const status = isPremium ? "Premium Lifetime" : isTrial ? "Trial Aktif" : "Trial Berakhir";
+  const dateLabel = expiry && !Number.isNaN(expiry.getTime())
+    ? expiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—";
+  const daysLabel = remainingDays > 1 ? `${remainingDays} hari tersisa`
+    : remainingDays === 1 ? "1 hari tersisa" : "Berakhir hari ini";
+  bar.innerHTML = `
+    <div class="customer-dashboard">
+      <div class="customer-welcome">
+        <div><span class="customer-kicker">AREA PELANGGAN</span>
+          <h2>Selamat datang kembali</h2>
+          <p>Kelola akun dan temukan aplikasi favorit Anda di IFAL57_WRT.</p>
+        </div>
+        <div class="customer-user"><span class="customer-avatar">${esc((customerAccount.email || "U").slice(0,1).toUpperCase())}</span>
+          <span><strong>${esc(customerAccount.email)}</strong><small>Akun pelanggan</small></span>
+        </div>
+      </div>
+      <div class="customer-summary">
+        <article class="customer-plan-card ${isPremium ? "is-premium" : isTrial ? "is-trial" : "is-expired"}">
+          <div class="customer-card-top"><span>Status Langganan</span><span class="status-pill">${status}</span></div>
+          <strong class="customer-plan-title">${isPremium ? "Akses Premium" : isTrial ? "Masa Trial Gratis" : "Akses Trial Selesai"}</strong>
+          <p>${isPremium ? "Akun Anda memiliki akses Premium tanpa batas waktu." : isTrial ? `Nikmati akses penuh. ${daysLabel}.` : "Aktifkan Premium untuk melanjutkan akses unduhan."}</p>
+          ${isTrial ? `<div class="trial-progress"><span style="width:${Math.max(0,Math.min(100,remainingDays/7*100))}%"></span></div><small>Trial berakhir: ${dateLabel}</small>` : ""}
+          ${!isPremium ? `<button type="button" id="openPremium" class="primary customer-upgrade">${isTrial ? "Lihat opsi Premium" : "Aktifkan Premium · Rp25.000"}</button>` : ""}
+        </article>
+        <article class="customer-info-card"><span class="customer-info-icon">✦</span><small>AKUN TERDAFTAR</small><strong>${customerAccount.createdAt ? new Date(customerAccount.createdAt).toLocaleDateString("id-ID") : "Aktif"}</strong><p>Perangkat terhubung: ${customerAccount.deviceBound ? "Ya" : "Tidak"}</p></article>
+        <article class="customer-info-card"><span class="customer-info-icon">⬇</span><small>AKSES KATALOG</small><strong>${customerAccount.canDownload ? "Tersedia" : "Dibatasi"}</strong><p>${customerAccount.canDownload ? "Anda dapat mengunduh aplikasi." : "Perbarui paket untuk mengunduh."}</p></article>
+      </div>
+      <div class="customer-dashboard-bottom">
+        <div class="customer-history-card"><div class="customer-section-heading"><div><small>AKTIVITAS</small><h3>Riwayat download</h3></div><span class="history-count" id="customerHistoryCount">—</span></div><div id="customerHistoryList" class="customer-history-list"><p class="history-empty">Memuat riwayat download...</p></div></div>
+        <div class="customer-shortcuts"><div><small>JELAJAHI</small><h3>Apa yang ingin Anda lakukan?</h3></div><button type="button" id="browseCatalog" class="catalog-cta"><span>▦</span><span><strong>Buka katalog aplikasi</strong><small>Lihat koleksi aplikasi terbaru</small></span><b>→</b></button><button type="button" id="customerLogout" class="customer-logout">Keluar dari akun <span>↗</span></button></div>
+      </div>
+    </div>`;
+  $("#userBtn").textContent = isPremium ? "Premium aktif" : "Akun saya";
+  loadCustomerHistory();
 }
-
 async function refreshCustomer() {
   try { const data = await request("/api/customer/me", { cache: "no-store" }); customerAccount = data.account || null; }
   catch (_) { customerAccount = null; }
@@ -464,10 +494,31 @@ $("#customerForm").addEventListener("submit", async (event) => {
 });
 
 $("#accountBar").addEventListener("click", async (event) => {
+  if (event.target.closest("#browseCatalog")) {
+    $("#catalog").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
   if (!event.target.closest("#customerLogout")) return;
   try { await request("/api/customer/logout", { method: "POST" }); customerAccount = null; renderCustomerAccount(); await loadApps(); }
   catch (error) { alert(error.message); }
 });
+
+async function loadCustomerHistory() {
+  const list = $("#customerHistoryList");
+  if (!list || !customerAccount) return;
+  try {
+    const data = await request("/api/customer/history", { cache: "no-store" });
+    const items = Array.isArray(data.history) ? data.history : [];
+    const count = $("#customerHistoryCount");
+    if (count) count.textContent = String(items.length);
+    list.innerHTML = items.length ? items.slice(0, 5).map(item => {
+      const date = item.date ? new Date(item.date).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "Tanggal tidak tersedia";
+      return `<div class="history-row"><span class="history-app-icon">APK</span><span class="history-app-copy"><strong>${esc(item.appName)}</strong><small>${esc(date)}</small></span><span class="history-done">Selesai</span></div>`;
+    }).join("") : '<p class="history-empty">Belum ada download dari akun ini. Aplikasi yang Anda unduh setelah pembaruan akan tampil di sini.</p>';
+  } catch (_) {
+    list.innerHTML = '<p class="history-empty">Riwayat download belum dapat dimuat.</p>';
+  }
+}
 
 async function loadApps() {
   $("#apps").innerHTML = '<div class="catalog-loading">Memuat katalog aplikasi...</div>';
