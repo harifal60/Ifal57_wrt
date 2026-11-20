@@ -52,27 +52,22 @@ function formatSize(bytes) {
 }
 
 function getDeviceId() {
-  // Di aplikasi Android TV, ID berasal dari ANDROID_ID melalui bridge native.
+  // Hanya APK/STB yang memiliki bridge native dan mengirim ANDROID_ID.
+  // Browser tidak membuat ID lokal agar tidak mengikat akun ke browser.
   try {
     if (window.IFALDevice && typeof window.IFALDevice.getDeviceId === "function") {
       const nativeId = String(window.IFALDevice.getDeviceId() || "").trim();
       if (nativeId) return nativeId;
     }
   } catch (_) {}
-  // Untuk browser biasa, gunakan ID instalasi persisten (bukan hardware ID).
-  const key = "ifal57_device_id_v1";
-  let id = "";
-  try { id = localStorage.getItem(key) || ""; } catch (_) {}
-  if (!/^[a-zA-Z0-9._:-]{12,200}$/.test(id)) {
-    id = "web-" + (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    try { localStorage.setItem(key, id); } catch (_) {}
-  }
-  return id;
+  return "";
 }
 
 async function request(url, options = {}) {
   const headers = new Headers(options.headers || {});
-  headers.set("X-Device-ID", getDeviceId());
+  const deviceId = getDeviceId();
+  if (deviceId) headers.set("X-Device-ID", deviceId);
+  else headers.delete("X-Device-ID");
   const response = await fetch(url, { ...options, headers });
   const raw = await response.text();
   let data = {};
