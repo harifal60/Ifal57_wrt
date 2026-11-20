@@ -105,6 +105,14 @@ function validDeviceId(value) {
 function deviceMismatch(user, deviceId) {
   return !!(user.deviceId && user.deviceId !== deviceId);
 }
+function deviceAlreadyUsedByAnotherAccount(users, deviceId, currentUserId = null) {
+  return users.some(user =>
+    user.id !== currentUserId &&
+    user.deviceId &&
+    !String(user.deviceId).startsWith("web-") &&
+    user.deviceId === deviceId
+  );
+}
 function requireCustomer(req, res, next) {
   // Admin yang sudah login boleh mengunduh APK dari katalog tanpa akun pelanggan.
   // Aturan trial, Premium Lifetime, dan ikatan perangkat tetap berlaku untuk pelanggan biasa.
@@ -209,6 +217,9 @@ app.post("/api/customer/register", async (req, res) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Masukkan alamat email yang valid." });
   if (password.length < 10) return res.status(400).json({ error: "Password minimal 10 karakter." });
   const users = readUsers();
+  if (nativeApp && deviceAlreadyUsedByAnotherAccount(users, deviceId)) {
+    return res.status(403).json({ error: "Perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin jika perlu reset perangkat." });
+  }
   if (users.some(user => user.email === email)) return res.status(409).json({ error: "Email sudah terdaftar. Silakan login." });
   const now = Date.now();
   const user = { id: crypto.randomUUID(), email, hash: await bcrypt.hash(password, 12), createdAt: new Date(now).toISOString(), trialEndsAt: new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), plan: "trial" };
@@ -230,6 +241,9 @@ app.post("/api/customer/login", async (req, res) => {
   const user = users.find(item => item.email === email);
   if (!user || !(await bcrypt.compare(password, user.hash))) return res.status(401).json({ error: "Email atau password salah." });
   if (nativeApp) {
+    if (deviceAlreadyUsedByAnotherAccount(users, deviceId, user.id)) {
+      return res.status(403).json({ error: "Perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin jika perlu reset perangkat." });
+    }
     // ID browser lama (web-...) bukan ikatan perangkat Android; migrasikan saat APK login.
     if (user.deviceId && !String(user.deviceId).startsWith("web-") && deviceMismatch(user, deviceId)) {
       return res.status(403).json({ error: "Perangkat Android ini sudah terikat ke akun lain atau akun ini terikat ke perangkat lain. Hubungi admin untuk reset perangkat." });
