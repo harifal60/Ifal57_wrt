@@ -21,7 +21,8 @@ const DOWNLOAD_EVENTS_FILE = path.join(DATA_DIR, "download-events.json");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const PAYMENTS_FILE = path.join(DATA_DIR, "payments.json");
 const TRIAL_DAYS = 7;
-const LIFETIME_PRICE = 25000;
+const PREMIUM_PRICE = 25000;
+const PREMIUM_DAYS = 30;
 
 function createMailTransporter() {
   const user = process.env.GMAIL_USER;
@@ -80,9 +81,15 @@ const isAdmin = (req, res, next) =>
   req.session.admin ? next() : res.status(401).json({ error: "Silakan login sebagai admin." });
 function customerStatus(user) {
   if (!user) return null;
-  const end = new Date(user.trialEndsAt).getTime();
-  const activeTrial = user.plan !== "lifetime" && Number.isFinite(end) && Date.now() < end;
-  return { email: user.email, plan: user.plan === "lifetime" ? "lifetime" : activeTrial ? "trial" : "expired", trialEndsAt: user.trialEndsAt, createdAt: user.createdAt, canDownload: user.plan === "lifetime" || activeTrial, deviceBound: !!user.deviceId };
+  const now = Date.now();
+  const premiumEnd = new Date(user.premiumExpiresAt || 0).getTime();
+  const activePremium = user.plan === "premium" && Number.isFinite(premiumEnd) && now < premiumEnd;
+  // Akun lifetime lama tetap dihormati; aktivasi baru memakai Premium 30 hari.
+  const legacyLifetime = user.plan === "lifetime";
+  const trialEnd = new Date(user.trialEndsAt).getTime();
+  const activeTrial = !activePremium && !legacyLifetime && Number.isFinite(trialEnd) && now < trialEnd;
+  const plan = legacyLifetime ? "lifetime" : activePremium ? "premium" : activeTrial ? "trial" : "expired";
+  return { email: user.email, plan, trialEndsAt: user.trialEndsAt, premiumExpiresAt: user.premiumExpiresAt || null, createdAt: user.createdAt, canDownload: legacyLifetime || activePremium || activeTrial, deviceBound: !!user.deviceId };
 }
 function requestDeviceId(req) {
   return String(req.get("X-Device-ID") || req.body?.deviceId || "").trim().slice(0, 200);
@@ -296,25 +303,25 @@ app.post("/api/customer/reset-password", async (req, res) => {
   res.json({ ok: true, message: "Password berhasil diganti. Silakan login dengan password baru." });
 });
 
-// Pembayaran Lifetime manual QRIS Rp25.000: pelanggan membuat permintaan, admin memverifikasi.
+// Pembayaran Premium 30 hari manual QRIS Rp25.000: pelanggan membuat permintaan, admin memverifikasi.
 app.get("/api/customer/payment-request", (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: "Login terlebih dahulu." });
   const user = readUsers().find(item => item.id === req.session.userId);
   if (!user) return res.status(401).json({ error: "Akun tidak ditemukan." });
   const payments = readPayments().filter(item => item.userId === user.id);
-  res.json({ price: LIFETIME_PRICE, latest: payments.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null });
+  res.json({ price: PREMIUM_PRICE, durationDays: PREMIUM_DAYS, latest: payments.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null });
 });
 app.post("/api/customer/payment-request", (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: "Login terlebih dahulu." });
   const users = readUsers();
   const user = users.find(item => item.id === req.session.userId);
   if (!user) return res.status(401).json({ error: "Akun tidak ditemukan." });
-  if (user.plan === "lifetime") return res.status(409).json({ error: "Akun sudah Lifetime." });
+  if (customerStatus(user).plan === "lifetime" || customerStatus(user).plan === "premium") return res.status(409).json({ error: "Akun sudah Premium aktif." });
   const payments = readPayments();
   const pending = payments.find(item => item.userId === user.id && item.status === "pending");
   if (pending) return res.json({ ok: true, payment: pending });
   if (!user.deviceId || !req.session.deviceId || deviceMismatch(user, req.session.deviceId)) return res.status(403).json({ error: "Perangkat tidak cocok dengan lisensi akun." });
-  const payment = { id: crypto.randomUUID(), userId: user.id, email: user.email, deviceId: user.deviceId, amount: LIFETIME_PRICE, status: "pending", createdAt: new Date().toISOString() };
+  const payment = { id: crypto.randomUUID(), userId: user.id, email: user.email, deviceId: user.deviceId, amount: PREMIUM_PRICE, durationDays: PREMIUM_DAYS, status: "pending", createdAt: new Date().toISOString() };
   payments.push(payment); writePayments(payments);
   res.json({ ok: true, payment });
 });
@@ -340,7 +347,7 @@ app.post("/api/admin/payments/:id/approve", isAdmin, (req, res) => {
   const users = readUsers();
   const user = users.find(item => item.id === payment.userId);
   if (!user) return res.status(404).json({ error: "User pembayaran tidak ditemukan." });
-  user.plan = "lifetime"; user.lifetimeActivatedAt = new Date().toISOString();
+  user.plan = "premium"; user.premiumActivatedAt = new Date().toISOString(); user.premiumExpiresAt = new Date(Date.now() + PREMIUM_DAYS * 24 * 60 * 60 * 1000).toISOString();
   payment.status = "approved"; payment.approvedAt = new Date().toISOString(); payment.approvedBy = req.session.admin;
   payment.deviceId = user.deviceId || payment.deviceId || null;
   writeUsers(users); writePayments(payments);
