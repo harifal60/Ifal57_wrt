@@ -344,7 +344,16 @@ function renderCustomerAccount() {
   const bar = $("#accountBar");
   if (!customerAccount) { bar.hidden = true; $("#userBtn").textContent = "Login / Daftar"; return; }
   bar.hidden = false;
-  const status = customerAccount.plan === "lifetime" ? "PREMIUM PERMANEN" : customerAccount.plan === "trial" ? `TRIAL sampai ${new Date(customerAccount.trialEndsAt).toLocaleDateString("id-ID")}` : "TRIAL BERAKHIR";
+  let status = "TRIAL BERAKHIR";
+  if (customerAccount.plan === "lifetime") {
+    status = "PREMIUM PERMANEN";
+  } else if (customerAccount.plan === "trial") {
+    const expiry = new Date(customerAccount.trialEndsAt);
+    const remainingMs = expiry.getTime() - Date.now();
+    const remainingDays = Math.max(0, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
+    const remainingLabel = remainingDays > 1 ? `Sisa ${remainingDays} hari` : remainingDays === 1 ? "Sisa 1 hari" : "Berakhir hari ini";
+    status = `${remainingLabel} · Exp: ${expiry.toLocaleDateString("id-ID")}`;
+  }
   bar.innerHTML = `<div><strong>${esc(customerAccount.email)}</strong><small>${esc(status)}</small></div>${customerAccount.plan === "expired" ? `<button type="button" id="openPremium" class="primary">Premium Rp25.000</button>` : ""}<button type="button" id="customerLogout" class="text-button">Keluar</button>`;
   $("#userBtn").textContent = customerAccount.plan === "lifetime" ? "Premium aktif" : "Akun saya";
 }
