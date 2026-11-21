@@ -1453,3 +1453,73 @@ body.customer-profile-open #accountBar{
   .customer-profile-open .customer-profile-banner{height:92px}
   .customer-profile-open .customer-profile-detail{padding:5px 0}
 }
+
+
+/* Penyelarasan ikon refresh dan notifikasi pada dashboard user */
+.customer-dashboard-compact .customer-compact-head{
+  align-items:center!important;
+}
+.customer-dashboard-compact .customer-dashboard-tools{
+  align-items:center!important;
+  align-self:center!important;
+  gap:6px!important;
+}
+.customer-dashboard-compact .customer-tool-button{
+  flex:0 0 34px!important;
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  min-height:34px!important;
+  max-width:34px!important;
+  max-height:34px!important;
+  border-radius:11px!important;
+  font-size:20px!important;
+  line-height:1!important;
+}
+.customer-dashboard-compact .customer-bell-button{
+  font-size:0!important;
+}
+.customer-dashboard-compact .customer-bell-button span{
+  display:block!important;
+  font-size:16px!important;
+  line-height:1!important;
+  transform:scale(.92);
+}
+.customer-dashboard-compact .customer-bell-button i{
+  top:-4px!important;
+  right:-4px!important;
+  min-width:15px!important;
+  height:15px!important;
+  font-size:8px!important;
+}
+.customer-dashboard-compact .customer-avatar{
+  flex:0 0 38px!important;
+  width:38px!important;
+  height:38px!important;
+}
+@media(max-width:460px){
+  .customer-dashboard-compact .customer-compact-head{
+    align-items:center!important;
+  }
+  .customer-dashboard-compact .customer-dashboard-tools{
+    align-self:center!important;
+    gap:5px!important;
+  }
+  .customer-dashboard-compact .customer-tool-button{
+    flex-basis:32px!important;
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    min-height:32px!important;
+    max-width:32px!important;
+    max-height:32px!important;
+  }
+  .customer-dashboard-compact .customer-bell-button span{
+    font-size:15px!important;
+  }
+  .customer-dashboard-compact .customer-avatar{
+    flex-basis:36px!important;
+    width:36px!important;
+    height:36px!important;
+  }
+}
