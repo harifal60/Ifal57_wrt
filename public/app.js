@@ -379,8 +379,15 @@ function renderCustomerAccount() {
           <h2>Halo, ${esc((customerAccount.email || "Pelanggan").split("@")[0])}</h2>
           <p>${esc(customerAccount.email || "")}</p>
         </div>
-        <span class="customer-avatar">${esc((customerAccount.email || "U").slice(0,1).toUpperCase())}</span>
+        <div class="customer-dashboard-tools">
+          <button type="button" id="refreshCustomerDashboard" class="customer-tool-button" aria-label="Refresh dashboard" title="Refresh dashboard">↻</button>
+          <button type="button" id="customerNotifications" class="customer-tool-button customer-bell-button" aria-label="Notifikasi aplikasi" title="Notifikasi">
+            <span aria-hidden="true">♢</span><i id="customerNotificationCount" hidden>0</i>
+          </button>
+          <span class="customer-avatar">${esc((customerAccount.email || "U").slice(0,1).toUpperCase())}</span>
+        </div>
       </div>
+      <div id="customerNotificationPanel" class="customer-notification-panel" hidden aria-live="polite"></div>
       <section class="customer-plan-card ${isPremium ? "is-premium" : isTrial ? "is-trial" : "is-expired"}">
         <div class="customer-card-top">
           <span>STATUS LANGGANAN</span>
@@ -401,6 +408,28 @@ function renderCustomerAccount() {
       </div>
     </div>`;
   $("#userBtn").textContent = isPremium ? "Premium aktif" : "Akun saya";
+  renderCustomerNotifications();
+}
+function renderCustomerNotifications() {
+  const countNode = $("#customerNotificationCount");
+  const panel = $("#customerNotificationPanel");
+  if (!countNode || !panel) return;
+  const updates = catalogItems.filter(item => item.isUpdate);
+  countNode.textContent = String(updates.length);
+  countNode.hidden = updates.length === 0;
+  panel.innerHTML = updates.length
+    ? `<strong>🔔 Pembaruan aplikasi</strong>${updates.map(item => `<div class="customer-notification-item"><span>${esc(item.name || "Aplikasi")}</span><small>Versi ${esc(item.version || "terbaru")}${item.updatedAt ? " · " + esc(new Date(item.updatedAt).toLocaleDateString("id-ID")) : ""}</small></div>`).join("")}`
+    : '<strong>Notifikasi</strong><p>Belum ada pembaruan aplikasi baru.</p>';
+}
+async function refreshCustomerDashboard(button) {
+  if (button) { button.disabled = true; button.classList.add("is-refreshing"); }
+  try {
+    await refreshCustomer();
+    await loadApps();
+    await loadCustomerHistory();
+  } finally {
+    if (button) { button.disabled = false; button.classList.remove("is-refreshing"); }
+  }
 }
 async function refreshCustomer() {
   try { const data = await request("/api/customer/me", { cache: "no-store" }); customerAccount = data.account || null; }
@@ -543,6 +572,20 @@ $("#customerForm").addEventListener("submit", async (event) => {
 });
 
 $("#accountBar").addEventListener("click", async (event) => {
+  if (event.target.closest("#refreshCustomerDashboard")) {
+    const button = event.target.closest("#refreshCustomerDashboard");
+    try { await refreshCustomerDashboard(button); }
+    catch (error) { alert(error.message || "Dashboard gagal diperbarui."); }
+    return;
+  }
+  if (event.target.closest("#customerNotifications")) {
+    const panel = $("#customerNotificationPanel");
+    if (panel) {
+      renderCustomerNotifications();
+      panel.hidden = !panel.hidden;
+    }
+    return;
+  }
   if (event.target.closest("#browseCatalog")) {
     $("#catalog").scrollIntoView({ behavior: "smooth", block: "start" });
     return;
@@ -575,6 +618,7 @@ async function loadApps() {
     const items = await request("/api/apps", { cache: "no-store" });
     catalogItems = Array.isArray(items) ? items : [];
     renderApps();
+    renderCustomerNotifications();
   } catch (error) {
     $("#apps").innerHTML = `<div class="catalog-empty">
       <strong>Katalog belum bisa dimuat</strong>
