@@ -82,14 +82,21 @@ const isAdmin = (req, res, next) =>
 function customerStatus(user) {
   if (!user) return null;
   const now = Date.now();
-  const premiumEnd = new Date(user.premiumExpiresAt || 0).getTime();
-  const activePremium = user.plan === "premium" && Number.isFinite(premiumEnd) && now < premiumEnd;
-  // Akun lifetime lama tetap dihormati; aktivasi baru memakai Premium 30 hari.
-  const legacyLifetime = user.plan === "lifetime";
+  // Semua Premium, termasuk data akun lama berlabel lifetime, dibatasi 30 hari.
+  // Untuk data lama tanpa tanggal kedaluwarsa, hitung dari tanggal aktivasi;
+  // jika tidak tersedia, gunakan tanggal pembuatan akun sebagai fallback.
+  const premiumStart = user.premiumActivatedAt || user.createdAt;
+  const legacyPremiumEnd = user.plan === "lifetime" && premiumStart
+    ? new Date(new Date(premiumStart).getTime() + PREMIUM_DAYS * 24 * 60 * 60 * 1000).toISOString()
+    : null;
+  const premiumExpiry = user.premiumExpiresAt || legacyPremiumEnd;
+  const premiumEnd = new Date(premiumExpiry || 0).getTime();
+  const activePremium = (user.plan === "premium" || user.plan === "lifetime") &&
+    Number.isFinite(premiumEnd) && now < premiumEnd;
   const trialEnd = new Date(user.trialEndsAt).getTime();
-  const activeTrial = !activePremium && !legacyLifetime && Number.isFinite(trialEnd) && now < trialEnd;
-  const plan = legacyLifetime ? "lifetime" : activePremium ? "premium" : activeTrial ? "trial" : "expired";
-  return { email: user.email, plan, trialEndsAt: user.trialEndsAt, premiumExpiresAt: user.premiumExpiresAt || null, createdAt: user.createdAt, canDownload: legacyLifetime || activePremium || activeTrial, deviceBound: !!user.deviceId };
+  const activeTrial = !activePremium && Number.isFinite(trialEnd) && now < trialEnd;
+  const plan = activePremium ? "premium" : activeTrial ? "trial" : "expired";
+  return { email: user.email, plan, trialEndsAt: user.trialEndsAt, premiumExpiresAt: premiumExpiry || null, premiumActivatedAt: user.premiumActivatedAt || premiumStart || null, createdAt: user.createdAt, canDownload: activePremium || activeTrial, deviceBound: !!user.deviceId };
 }
 function isNativeAppRequest(req) {
   // Utamakan header dari JavaScript; User-Agent menjadi fallback untuk WebView Android.
@@ -123,7 +130,7 @@ function deviceAlreadyUsedByAnotherAccount(users, deviceId, currentUserId = null
 }
 function requireCustomer(req, res, next) {
   // Admin yang sudah login boleh mengunduh APK dari katalog tanpa akun pelanggan.
-  // Aturan trial, Premium Lifetime, dan ikatan perangkat tetap berlaku untuk pelanggan biasa.
+  // Aturan trial, Premium 30 hari, dan ikatan perangkat tetap berlaku untuk pelanggan biasa.
   if (req.session.admin) {
     req.isAdminDownload = true;
     return next();
@@ -394,7 +401,7 @@ app.post("/api/customer/payment-request", (req, res) => {
   const users = readUsers();
   const user = users.find(item => item.id === req.session.userId);
   if (!user) return res.status(401).json({ error: "Akun tidak ditemukan." });
-  if (customerStatus(user).plan === "lifetime" || customerStatus(user).plan === "premium") return res.status(409).json({ error: "Akun sudah Premium aktif." });
+  if (customerStatus(user).plan === "premium") return res.status(409).json({ error: "Akun sudah Premium aktif." });
   const payments = readPayments();
   const pending = payments.find(item => item.userId === user.id && item.status === "pending");
   if (pending) return res.json({ ok: true, payment: pending });
