@@ -18,7 +18,7 @@ const iconThemes = [
 ];
 
 function esc(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+  return String(value == null ? "" : value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[char]);
 }
@@ -244,11 +244,11 @@ function ensureCatalogStats() {
 }
 
 function renderApps() {
-  const query = ($("#search")?.value || "").trim().toLocaleLowerCase("id");
+  const query = (($("#search") && $("#search").value) || "").trim().toLocaleLowerCase("id");
   const filtered = catalogItems.filter((item) =>
     `${item.name || ""} ${item.description || ""} ${item.version || ""}`.toLocaleLowerCase("id").includes(query)
   );
-  const sortMode = $("#sortApps")?.value || "newest";
+  const sortMode = ($("#sortApps") && $("#sortApps").value) || "newest";
   const sorted = filtered.slice().sort((a, b) => {
     if (sortMode === "popular") return (Number(b.downloads) || 0) - (Number(a.downloads) || 0);
     if (sortMode === "az") return String(a.name || "").localeCompare(String(b.name || ""), "id", { sensitivity: "base", numeric: true });
@@ -672,8 +672,8 @@ async function loadApps() {
       <p>${esc(error.message || "Periksa koneksi lalu coba lagi.")}</p>
       <button class="retry-button" type="button" id="retryApps">Coba lagi</button>
     </div>`;
-    $("#catalogStats")?.remove();
-    $("#retryApps")?.addEventListener("click", loadApps);
+    if ($("#catalogStats")) $("#catalogStats").remove();
+    if ($("#retryApps")) $("#retryApps").addEventListener("click", loadApps);
   }
 }
 
@@ -705,7 +705,7 @@ async function openAdmin() {
       await loadApps();
       await loadAdminStats();
     } else {
-      $("#adminDashboard")?.setAttribute("hidden", "");
+      if ($("#adminDashboard")) $("#adminDashboard").setAttribute("hidden", "");
       renderApps();
     }
   } catch (error) {
@@ -719,11 +719,11 @@ async function openAdmin() {
 $("#adminBtn").addEventListener("click", openAdmin);
 document.addEventListener("click", (event) => {
   const adminAction = event.target.closest("[data-admin-action]");
-  if (adminAction?.dataset.adminAction === "upload") {
+  if (adminAction && adminAction.dataset && adminAction.dataset.adminAction === "upload") {
     const area = $("#adminUploadArea");
     if (area) { area.hidden = !area.hidden; if (!area.hidden) area.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
   }
-  if (adminAction?.dataset.adminAction === "premium") {
+  if (adminAction && adminAction.dataset && adminAction.dataset.adminAction === "premium") {
     const panel = $("#adminPaymentsPanel");
     if (panel) { panel.open = true; panel.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
   }
@@ -733,7 +733,7 @@ document.addEventListener("click", (event) => {
 });
 $("#closeDialog").addEventListener("click", () => dialog.close());
 $("#search").addEventListener("input", renderApps);
-$("#sortApps")?.addEventListener("change", renderApps);
+if ($("#sortApps")) $("#sortApps").addEventListener("change", renderApps);
 
 $("#authForm").addEventListener("submit", async (event) => {
   event.preventDefault();
