@@ -1276,3 +1276,55 @@ button.user-delete-icon[data-delete-user] svg path{
   .customer-dashboard-compact .customer-tool-button{flex-basis:34px!important;width:34px!important;height:34px!important}
   .customer-dashboard-compact .customer-avatar{flex-basis:34px!important;width:34px!important;height:34px!important}
 }
+
+
+/* Halaman Akun Saya */
+.customer-profile-page{max-width:980px;margin:12px auto 28px;padding:0 18px 18px;color:#183d3a}
+.customer-profile-card{position:relative;overflow:hidden;border:1px solid #bfe9e4;border-radius:22px;background:#fff;box-shadow:0 8px 24px rgba(16,110,105,.06)}
+.customer-profile-banner{height:145px;background:linear-gradient(145deg,#effdfb 0%,#b5f2e9 48%,#10b8a7 100%);position:absolute;inset:0 0 auto}
+.customer-profile-banner:after{content:"";position:absolute;width:120%;height:150px;left:-8%;bottom:-90px;background:rgba(255,255,255,.72);border-radius:50%;transform:rotate(-7deg)}
+.customer-profile-content{position:relative;padding:24px 28px 22px}
+.customer-profile-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.customer-profile-heading h2{margin:6px 0;color:#173b5d;font-size:28px;letter-spacing:-.6px}
+.customer-profile-heading p{margin:0;color:#536b85;font-size:14px}
+.customer-back-button{border:1px solid #cfe5e2;border-radius:12px;background:#fff;color:#176f75;padding:10px 13px;font-weight:700;white-space:nowrap;cursor:pointer}
+.customer-profile-identity{display:flex;align-items:center;flex-direction:column;gap:7px;padding:22px 0 20px;border-bottom:1px solid #dce8ed;color:#173b5d}
+.customer-profile-avatar{width:104px;height:104px;display:grid;place-items:center;border:5px solid #d7f7f2;border-radius:50%;background:#078f85;color:#fff;font-size:44px;font-weight:800;box-shadow:0 0 0 2px #aee9e2}
+.customer-profile-identity>strong{font-size:25px}
+.customer-profile-email{font-size:15px;color:#536b85;overflow-wrap:anywhere;text-align:center}
+.customer-profile-details{display:grid;gap:4px;padding:12px 0}
+.customer-profile-detail{display:flex;align-items:center;gap:15px;padding:9px 0;color:#173b5d}
+.customer-detail-icon{width:54px;height:54px;flex:0 0 54px;display:grid;place-items:center;border-radius:17px;background:#e5f8f5;color:#087f78;font-size:28px;font-weight:800}
+.customer-profile-detail strong{font-size:16px}
+.customer-profile-detail p{margin:3px 0 0;color:#536b85;font-size:15px;overflow-wrap:anywhere}
+.customer-profile-detail .customer-device-id{font-size:13px;word-break:break-all}
+.customer-profile-status{display:inline-block;padding:5px 13px;border-radius:20px;background:#d9f7ee;color:#087d65;font-size:14px;font-weight:800}
+.customer-profile-status.expired{background:#fff0ed;color:#bd5149}
+.customer-profile-status.premium{background:#e5efff;color:#315eaa}
+.customer-profile-notice{display:flex;align-items:center;gap:14px;margin-top:8px;padding:17px 18px;border:1px solid #b7eee5;border-radius:17px;background:linear-gradient(110deg,#e8fbf7,#c8f3ec);color:#087e72;font-size:17px;font-weight:800}
+.customer-profile-notice:first-letter{font-size:24px}
+.customer-profile-logout{width:100%;margin:18px 0 14px;padding:15px;border:1.5px solid #f04458;border-radius:16px;background:#fff0f2;color:#d9233d;font-size:18px;font-weight:800;cursor:pointer}
+.customer-profile-security{padding:16px 18px;border:1px solid #d5e8f0;border-radius:18px;background:#f7fbfd;color:#087f89}
+.customer-profile-security p{margin:5px 0 0 28px;color:#536b85;font-size:14px}
+@media(max-width:520px){.customer-profile-page{padding:0 10px 14px}.customer-profile-content{padding:19px 16px}.customer-profile-banner{height:125px}.customer-profile-heading h2{font-size:24px}.customer-profile-heading p{max-width:230px;font-size:12px}.customer-back-button{padding:8px 10px;font-size:11px}.customer-profile-avatar{width:88px;height:88px;font-size:38px}.customer-profile-identity>strong{font-size:22px}.customer-profile-detail{gap:11px}.customer-detail-icon{width:46px;height:46px;flex-basis:46px;font-size:24px}.customer-profile-detail strong{font-size:14px}.customer-profile-detail p{font-size:13px}.customer-profile-notice{font-size:14px;padding:14px}.customer-profile-security p{font-size:12px}}
+
+
+/* Tombol keluar aplikasi terpisah dari logout akun */
+.customer-exit-app{
+  display:block;
+  width:100%;
+  margin:10px 0 0;
+  padding:14px 18px;
+  border:1px solid #d9e3e6;
+  border-radius:16px;
+  background:#f7fafb;
+  color:#526875;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+  transition:background .2s ease,border-color .2s ease;
+}
+.customer-exit-app:hover{
+  background:#edf4f5;
+  border-color:#b9cbd0;
+}

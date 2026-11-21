@@ -410,6 +410,51 @@ function renderCustomerAccount() {
   $("#userBtn").textContent = isPremium ? "Premium aktif" : "Akun saya";
   renderCustomerNotifications();
 }
+function renderCustomerProfile() {
+  if (!customerAccount) return;
+  const bar = $("#accountBar");
+  const expiry = customerAccount.trialEndsAt ? new Date(customerAccount.trialEndsAt) : null;
+  const premiumExpiry = customerAccount.premiumExpiresAt ? new Date(customerAccount.premiumExpiresAt) : null;
+  const isPremium = customerAccount.plan === "lifetime" || customerAccount.plan === "premium";
+  const isTrial = customerAccount.plan === "trial";
+  const status = isPremium ? (customerAccount.plan === "lifetime" ? "Premium Lifetime" : "Premium Aktif") : isTrial ? "Trial Aktif" : "Trial Berakhir";
+  const expiryDate = isPremium ? premiumExpiry : expiry;
+  const dateLabel = expiryDate && !Number.isNaN(expiryDate.getTime())
+    ? expiryDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—";
+  const created = customerAccount.createdAt ? new Date(customerAccount.createdAt) : null;
+  const activeLabel = created && !Number.isNaN(created.getTime())
+    ? created.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Tanggal pendaftaran tidak tersedia";
+  let deviceId = "Tidak tersedia";
+  try { deviceId = (isNativeAppClient() ? getNativeDeviceId() : getDeviceId()) || customerAccount.deviceId || "Tidak tersedia"; } catch (_) {}
+  const email = customerAccount.email || "";
+  const username = email.split("@")[0] || "Pelanggan";
+  bar.innerHTML = `
+    <div class="customer-profile-page">
+      <section class="customer-profile-card">
+        <div class="customer-profile-banner"></div>
+        <div class="customer-profile-content">
+          <div class="customer-profile-heading">
+            <div><span class="customer-kicker">AKUN PELANGGAN</span><h2>Akun Saya</h2><p>Informasi akun dan status langganan Anda</p></div>
+            <button type="button" id="backToDashboard" class="customer-back-button">← Dashboard</button>
+          </div>
+          <div class="customer-profile-identity"><span class="customer-profile-avatar">${esc(username.slice(0,1).toUpperCase())}</span><strong>${esc(username)}</strong><span class="customer-profile-email">✉ ${esc(email)}</span></div>
+          <div class="customer-profile-details">
+            <div class="customer-profile-detail"><span class="customer-detail-icon">▣</span><div><strong>ID Perangkat</strong><p class="customer-device-id">${esc(deviceId)}</p></div></div>
+            <div class="customer-profile-detail"><span class="customer-detail-icon">♛</span><div><strong>Status Langganan</strong><p><span class="customer-profile-status ${isPremium ? "premium" : isTrial ? "trial" : "expired"}">${status}</span></p></div></div>
+            <div class="customer-profile-detail"><span class="customer-detail-icon">▦</span><div><strong>Mulai Aktif</strong><p>${esc(activeLabel)}</p></div></div>
+            <div class="customer-profile-detail"><span class="customer-detail-icon">◷</span><div><strong>${isPremium && customerAccount.plan === "lifetime" ? "Masa Aktif" : "Kedaluwarsa"}</strong><p>${customerAccount.plan === "lifetime" ? "Tanpa batas waktu" : esc(dateLabel)}</p></div></div>
+          </div>
+          <div class="customer-profile-notice">✓ <span>Akun Anda ${isPremium || isTrial ? "aktif dan dapat menggunakan fitur aplikasi sesuai status langganan." : "sudah berakhir. Aktifkan Premium untuk melanjutkan akses."}</span></div>
+        </div>
+      </section>
+      <button type="button" id="customerLogout" class="customer-profile-logout">⇥ &nbsp; Keluar Akun</button>
+      <button type="button" id="customerExitApp" class="customer-exit-app">⏻ &nbsp; Keluar Aplikasi</button>
+      <aside class="customer-profile-security"><strong>ⓘ &nbsp; Catatan</strong><p>Pastikan akun Anda tetap aman dan jangan membagikan informasi akun kepada orang lain.</p></aside>
+    </div>`;
+  $("#userBtn").textContent = "Akun saya";
+  bar.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function renderCustomerNotifications() {
   const countNode = $("#customerNotificationCount");
   const panel = $("#customerNotificationPanel");
@@ -457,7 +502,7 @@ function openCustomerDialog(mode = "login") {
   userDialog.showModal();
 }
 
-$("#userBtn").addEventListener("click", () => openCustomerDialog("login"));
+$("#userBtn").addEventListener("click", () => customerAccount ? renderCustomerProfile() : openCustomerDialog("login"));
 document.addEventListener("click", async (event) => {
   if (event.target.closest("#openPremium")) openPremiumDialog();
   if (event.target.closest("#refreshPayments")) loadPaymentRequests();
@@ -572,6 +617,7 @@ $("#customerForm").addEventListener("submit", async (event) => {
 });
 
 $("#accountBar").addEventListener("click", async (event) => {
+  if (event.target.closest("#backToDashboard")) { renderCustomerAccount(); return; }
   if (event.target.closest("#refreshCustomerDashboard")) {
     const button = event.target.closest("#refreshCustomerDashboard");
     try { await refreshCustomerDashboard(button); }
@@ -588,6 +634,15 @@ $("#accountBar").addEventListener("click", async (event) => {
   }
   if (event.target.closest("#browseCatalog")) {
     $("#catalog").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const exitAppButton = event.target.closest("#customerExitApp");
+  if (exitAppButton) {
+    if (!confirm("Yakin ingin keluar dari aplikasi IFAL57_WRT?\n\nPilih OK untuk mencoba menutup aplikasi, atau Batal untuk tetap di sini.")) return;
+    // Tutup jendela bila aplikasi berjalan dalam WebView/PWA yang mengizinkannya.
+    window.close();
+    // Pada browser biasa, penutupan jendela dapat diblokir; kembali ke layar sebelumnya bila ada.
+    if (window.history.length > 1) window.history.back();
     return;
   }
   if (!event.target.closest("#customerLogout")) return;
