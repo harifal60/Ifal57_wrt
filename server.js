@@ -228,7 +228,7 @@ app.post("/api/customer/register", async (req, res) => {
   if (password.length < 10) return res.status(400).json({ error: "Password minimal 10 karakter." });
   const users = readUsers();
   if (deviceAlreadyUsedByAnotherAccount(users, deviceId)) {
-    return res.status(403).json({ error: "ID perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin untuk persetujuan reset perangkat." });
+    return res.status(403).json({ error: "Perangkat ini sudah terhubung ke akun lain. Hubungi admin untuk reset perangkat." });
   }
   if (users.some(user => user.email === email)) return res.status(409).json({ error: "Email sudah terdaftar. Silakan login." });
   const now = Date.now();
@@ -263,7 +263,7 @@ app.post("/api/customer/login", async (req, res) => {
     writeUsers(users);
   }
   if (deviceAlreadyUsedByAnotherAccount(users, deviceId, user.id)) {
-    return res.status(403).json({ error: "ID perangkat ini sudah terikat ke akun lain. Satu perangkat hanya dapat menggunakan satu akun. Hubungi admin untuk persetujuan reset perangkat." });
+    return res.status(403).json({ error: "Perangkat ini sudah terhubung ke akun lain. Hubungi admin untuk reset perangkat." });
   }
   // Browser dan Android boleh memakai akun yang sama. Akun yang awalnya dibuat
   // di browser wajib meminta persetujuan admin sebelum login pertama di Android.
