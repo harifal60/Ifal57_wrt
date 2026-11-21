@@ -198,12 +198,12 @@ async function loadRegisteredUsers() {
   try {
     const data = await request("/api/admin/users", { cache: "no-store" });
     const users = Array.isArray(data.users) ? data.users : [];
-    const premiumCount = users.filter(user => user.plan === "lifetime" || user.plan === "premium").length;
+    const premiumCount = users.filter(user => user.plan === "premium").length;
     const premiumNode = $("#premiumUserCount");
     if (premiumNode) premiumNode.textContent = premiumCount.toLocaleString("id-ID");
     if (!users.length) { container.innerHTML = '<p class="dashboard-empty">Belum ada pengguna terdaftar.</p>'; return; }
     container.innerHTML = users.map(user => {
-      const plan = user.plan === "lifetime" ? "Premium lama (Lifetime)" : user.plan === "premium" ? "Premium 30 hari" : user.plan === "trial" ? "Trial aktif" : "Trial berakhir";
+      const plan = user.plan === "premium" ? "Premium 30 hari" : user.plan === "trial" ? "Trial aktif" : "Trial berakhir";
       const created = user.createdAt ? new Date(user.createdAt).toLocaleString("id-ID") : "—";
       const appAccess = user.appAccessPending
         ? `<br><span class="history-status">Menunggu persetujuan login aplikasi</span><br><small>Device ID aplikasi: ${esc(user.appAccessDeviceId || "—")}</small>`
@@ -364,9 +364,9 @@ function renderCustomerAccount() {
   const premiumExpiry = customerAccount.premiumExpiresAt ? new Date(customerAccount.premiumExpiresAt) : null;
   const remainingDays = customerAccount.plan === "trial" && expiry
     ? Math.max(0, Math.ceil((expiry.getTime() - Date.now()) / 86400000)) : 0;
-  const isPremium = customerAccount.plan === "lifetime" || customerAccount.plan === "premium";
+  const isPremium = customerAccount.plan === "premium";
   const isTrial = customerAccount.plan === "trial";
-  const status = isPremium ? (customerAccount.plan === "lifetime" ? "Premium Lifetime" : "Premium Aktif") : isTrial ? "Trial Aktif" : "Trial Berakhir";
+  const status = isPremium ? "Premium Aktif" : isTrial ? "Trial Aktif" : "Trial Berakhir";
   const dateLabel = expiry && !Number.isNaN(expiry.getTime())
     ? expiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—";
   const daysLabel = remainingDays > 1 ? `${remainingDays} hari tersisa`
@@ -394,8 +394,8 @@ function renderCustomerAccount() {
           <span>STATUS LANGGANAN</span>
           <span class="status-pill">${status}</span>
         </div>
-        <strong class="customer-plan-title">${isPremium ? (customerAccount.plan === "lifetime" ? "Premium Lifetime" : "Premium 30 hari") : isTrial ? `${remainingDays} hari tersisa` : "Trial telah berakhir"}</strong>
-        <p>${isPremium ? (customerAccount.plan === "lifetime" ? "Akun Anda memiliki akses Premium tanpa batas waktu." : `Premium berakhir pada ${premiumExpiry ? premiumExpiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "30 hari setelah aktivasi"}.`) : isTrial ? `Trial gratis berakhir pada ${dateLabel}.` : "Aktifkan Premium untuk melanjutkan akses unduhan."}</p>
+        <strong class="customer-plan-title">${isPremium ? "Premium 30 hari" : isTrial ? `${remainingDays} hari tersisa` : "Trial telah berakhir"}</strong>
+        <p>${isPremium ? `Premium berakhir pada ${premiumExpiry && !Number.isNaN(premiumExpiry.getTime()) ? premiumExpiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "30 hari setelah aktivasi"}.` : isTrial ? `Trial gratis berakhir pada ${dateLabel}.` : "Aktifkan Premium untuk melanjutkan akses unduhan."}</p>
         ${isTrial ? `<div class="trial-progress"><span style="width:${Math.max(0,Math.min(100,remainingDays/7*100))}%"></span></div>` : ""}
         ${!isPremium ? `<button type="button" id="openPremium" class="primary customer-upgrade">${isTrial ? "Lihat Premium · Rp25.000" : "Aktifkan Premium · Rp25.000"}</button>` : ""}
       </section>
@@ -417,13 +417,13 @@ function renderCustomerProfile() {
   document.body.classList.add("customer-profile-open");
   const expiry = customerAccount.trialEndsAt ? new Date(customerAccount.trialEndsAt) : null;
   const premiumExpiry = customerAccount.premiumExpiresAt ? new Date(customerAccount.premiumExpiresAt) : null;
-  const isPremium = customerAccount.plan === "lifetime" || customerAccount.plan === "premium";
+  const isPremium = customerAccount.plan === "premium";
   const isTrial = customerAccount.plan === "trial";
-  const status = isPremium ? (customerAccount.plan === "lifetime" ? "Premium Lifetime" : "Premium Aktif") : isTrial ? "Trial Aktif" : "Trial Berakhir";
+  const status = isPremium ? "Premium Aktif" : isTrial ? "Trial Aktif" : "Trial Berakhir";
   const expiryDate = isPremium ? premiumExpiry : expiry;
   const dateLabel = expiryDate && !Number.isNaN(expiryDate.getTime())
     ? expiryDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—";
-  const created = customerAccount.createdAt ? new Date(customerAccount.createdAt) : null;
+  const created = (customerAccount.premiumActivatedAt || customerAccount.createdAt) ? new Date(customerAccount.premiumActivatedAt || customerAccount.createdAt) : null;
   const activeLabel = created && !Number.isNaN(created.getTime())
     ? created.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Tanggal pendaftaran tidak tersedia";
   let deviceId = "Tidak tersedia";
@@ -444,7 +444,7 @@ function renderCustomerProfile() {
             <div class="customer-profile-detail"><span class="customer-detail-icon">▣</span><div><strong>ID Perangkat</strong><p class="customer-device-id">${esc(deviceId)}</p></div></div>
             <div class="customer-profile-detail"><span class="customer-detail-icon">♛</span><div><strong>Status Langganan</strong><p><span class="customer-profile-status ${isPremium ? "premium" : isTrial ? "trial" : "expired"}">${status}</span></p></div></div>
             <div class="customer-profile-detail"><span class="customer-detail-icon">▦</span><div><strong>Mulai Aktif</strong><p>${esc(activeLabel)}</p></div></div>
-            <div class="customer-profile-detail"><span class="customer-detail-icon">◷</span><div><strong>${isPremium && customerAccount.plan === "lifetime" ? "Masa Aktif" : "Kedaluwarsa"}</strong><p>${customerAccount.plan === "lifetime" ? "Tanpa batas waktu" : esc(dateLabel)}</p></div></div>
+            <div class="customer-profile-detail"><span class="customer-detail-icon">◷</span><div><strong>Kedaluwarsa</strong><p>${esc(dateLabel)}</p></div></div>
           </div>
           <div class="customer-profile-notice">✓ <span>Akun Anda ${isPremium || isTrial ? "aktif dan dapat menggunakan fitur aplikasi sesuai status langganan." : "sudah berakhir. Aktifkan Premium untuk melanjutkan akses."}</span></div>
         </div>
