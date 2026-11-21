@@ -359,6 +359,7 @@ function renderCustomerAccount() {
     return;
   }
   bar.hidden = false;
+  document.body.classList.remove("customer-profile-open");
   const expiry = customerAccount.trialEndsAt ? new Date(customerAccount.trialEndsAt) : null;
   const premiumExpiry = customerAccount.premiumExpiresAt ? new Date(customerAccount.premiumExpiresAt) : null;
   const remainingDays = customerAccount.plan === "trial" && expiry
@@ -413,6 +414,7 @@ function renderCustomerAccount() {
 function renderCustomerProfile() {
   if (!customerAccount) return;
   const bar = $("#accountBar");
+  document.body.classList.add("customer-profile-open");
   const expiry = customerAccount.trialEndsAt ? new Date(customerAccount.trialEndsAt) : null;
   const premiumExpiry = customerAccount.premiumExpiresAt ? new Date(customerAccount.premiumExpiresAt) : null;
   const isPremium = customerAccount.plan === "lifetime" || customerAccount.plan === "premium";
@@ -448,7 +450,6 @@ function renderCustomerProfile() {
         </div>
       </section>
       <button type="button" id="customerLogout" class="customer-profile-logout">⇥ &nbsp; Keluar Akun</button>
-      <button type="button" id="customerExitApp" class="customer-exit-app">⏻ &nbsp; Keluar Aplikasi</button>
       <aside class="customer-profile-security"><strong>ⓘ &nbsp; Catatan</strong><p>Pastikan akun Anda tetap aman dan jangan membagikan informasi akun kepada orang lain.</p></aside>
     </div>`;
   $("#userBtn").textContent = "Akun saya";
@@ -636,17 +637,8 @@ $("#accountBar").addEventListener("click", async (event) => {
     $("#catalog").scrollIntoView({ behavior: "smooth", block: "start" });
     return;
   }
-  const exitAppButton = event.target.closest("#customerExitApp");
-  if (exitAppButton) {
-    if (!confirm("Yakin ingin keluar dari aplikasi IFAL57_WRT?\n\nPilih OK untuk mencoba menutup aplikasi, atau Batal untuk tetap di sini.")) return;
-    // Tutup jendela bila aplikasi berjalan dalam WebView/PWA yang mengizinkannya.
-    window.close();
-    // Pada browser biasa, penutupan jendela dapat diblokir; kembali ke layar sebelumnya bila ada.
-    if (window.history.length > 1) window.history.back();
-    return;
-  }
   if (!event.target.closest("#customerLogout")) return;
-  try { await request("/api/customer/logout", { method: "POST" }); customerAccount = null; renderCustomerAccount(); await loadApps(); }
+  try { await request("/api/customer/logout", { method: "POST" }); customerAccount = null; document.body.classList.remove("customer-profile-open"); renderCustomerAccount(); await loadApps(); }
   catch (error) { alert(error.message); }
 });
 
