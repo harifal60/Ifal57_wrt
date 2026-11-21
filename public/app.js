@@ -419,10 +419,11 @@ function showCustomerForm(view = "login") {
 function openCustomerDialog(mode = "login") {
   customerMode = mode;
   showCustomerForm(mode);
-  $("#userDialogTitle").textContent = mode === "register" ? "Buat akun IFAL57_WRT" : "Login IFAL57_WRT";
+  $("#userDialogTitle").textContent = mode === "register" ? "Daftar IFAL57_WRT" : "Login IFAL57_WRT";
   $("#customerSubmit").textContent = mode === "register" ? "Daftar & mulai trial" : "Login";
   $("#toggleCustomerMode").textContent = mode === "register" ? "Sudah punya akun? Login" : "Belum punya akun? Daftar";
   $("#customerForm").elements.password.autocomplete = mode === "register" ? "new-password" : "current-password";
+  $("#userDialogNote").textContent = "Masuk atau daftar untuk menikmati trial gratis 7 hari.";
   setCustomerMessage(mode === "register" ? "Trial gratis 7 hari dimulai setelah pendaftaran berhasil." : "Masuk untuk mengakses unduhan sesuai status akun.");
   userDialog.showModal();
 }
