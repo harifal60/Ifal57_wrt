@@ -382,7 +382,7 @@ function renderCustomerAccount() {
         <div class="customer-dashboard-tools">
           <button type="button" id="refreshCustomerDashboard" class="customer-tool-button" aria-label="Refresh dashboard" title="Refresh dashboard">↻</button>
           <button type="button" id="customerNotifications" class="customer-tool-button customer-bell-button" aria-label="Notifikasi aplikasi" title="Notifikasi">
-            <span aria-hidden="true">♢</span><i id="customerNotificationCount" hidden>0</i>
+            <span aria-hidden="true">🔔</span><i id="customerNotificationCount" hidden>0</i>
           </button>
           <span class="customer-avatar">${esc((customerAccount.email || "U").slice(0,1).toUpperCase())}</span>
         </div>

@@ -1234,3 +1234,45 @@ button.user-delete-icon[data-delete-user] svg path{
 .customer-notification-item span{font-weight:800}
 .customer-notification-item small{color:#8295a5;text-align:right}
 @media(max-width:420px){.customer-tool-button{width:35px;height:35px}.customer-dashboard-tools{gap:6px}.customer-notification-item{align-items:flex-start;flex-direction:column;gap:3px}.customer-notification-item small{text-align:left}}
+
+
+/* Layout dashboard pelanggan: tombol refresh dan lonceng sejajar di kanan atas */
+.customer-dashboard-compact .customer-compact-head{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  flex-wrap:nowrap!important;
+  gap:12px!important;
+}
+.customer-dashboard-compact .customer-compact-head>div:first-child{
+  flex:1 1 auto!important;
+  min-width:0!important;
+}
+.customer-dashboard-compact .customer-dashboard-tools{
+  display:flex!important;
+  flex:0 0 auto!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:7px!important;
+  width:auto!important;
+  margin:0!important;
+}
+.customer-dashboard-compact .customer-tool-button{
+  flex:0 0 38px!important;
+  width:38px!important;
+  height:38px!important;
+}
+.customer-dashboard-compact .customer-avatar{
+  flex:0 0 38px!important;
+  width:38px!important;
+  height:38px!important;
+}
+@media(max-width:460px){
+  .customer-dashboard-compact .customer-compact-head{align-items:flex-start!important}
+  .customer-dashboard-compact .customer-dashboard-tools{align-self:flex-start!important}
+  .customer-dashboard-compact .customer-tool-button{flex-basis:34px!important;width:34px!important;height:34px!important}
+  .customer-dashboard-compact .customer-avatar{flex-basis:34px!important;width:34px!important;height:34px!important}
+}
