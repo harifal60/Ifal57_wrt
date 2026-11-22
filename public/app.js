@@ -384,7 +384,8 @@ function renderCustomerAccount() {
   const bar = $("#accountBar");
   if (!customerAccount) {
     bar.hidden = true;
-    $("#userBtn").textContent = "Login / Daftar";
+    const userNavLabel = $("#userBtn > span:last-child");
+    if (userNavLabel) userNavLabel.textContent = "Login / Daftar";
     return;
   }
   bar.hidden = false;
@@ -437,7 +438,8 @@ function renderCustomerAccount() {
         <button type="button" id="customerLogout" class="customer-logout">Keluar</button>
       </div>
     </div>`;
-  $("#userBtn").textContent = isPremium ? "Premium aktif" : "Akun saya";
+  const userNavLabel = $("#userBtn > span:last-child");
+  if (userNavLabel) userNavLabel.textContent = isPremium ? "Premium aktif" : "Akun saya";
   renderCustomerNotifications();
 }
 function renderCustomerProfile() {
@@ -481,7 +483,8 @@ function renderCustomerProfile() {
       <button type="button" id="customerLogout" class="customer-profile-logout">⇥ &nbsp; Keluar Akun</button>
       <aside class="customer-profile-security"><strong>ⓘ &nbsp; Catatan</strong><p>Pastikan akun Anda tetap aman dan jangan membagikan informasi akun kepada orang lain.</p></aside>
     </div>`;
-  $("#userBtn").textContent = "Akun saya";
+  const userNavLabel = $("#userBtn > span:last-child");
+  if (userNavLabel) userNavLabel.textContent = "Akun saya";
   bar.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
