@@ -1555,3 +1555,27 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
   .bottom-nav{padding-left:6px;padding-right:6px}
   .bottom-nav-item{font-size:10px}
 }
+
+
+/* IFAL57_WRT UI refinement: compact bottom navigation and right-aligned theme toggle */
+.topbar .top-actions{margin-left:auto;display:flex;align-items:center;justify-content:flex-end}
+.topbar .top-actions .theme-toggle{margin-left:0;min-width:40px}
+.bottom-nav-item{
+  font-family:inherit;
+  font-size:10px;
+  font-weight:600;
+  line-height:1.15;
+  min-height:44px;
+  padding:4px 3px;
+  gap:2px;
+}
+.bottom-nav-icon{font-size:17px;line-height:1}
+body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+.bottom-nav{
+  padding-top:6px;
+  padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));
+}
+@media(max-width:420px){
+  .bottom-nav-item{font-size:9px}
+  .bottom-nav-icon{font-size:16px}
+}
