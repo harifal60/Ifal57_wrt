@@ -260,3 +260,25 @@
     min-height:22px !important;
   }
 }
+
+/* IFAL57_WRT Admin — Navy Blue + Electric Blue */
+.admin-page{background:radial-gradient(ellipse at 8% 0%,#0b2d61 0,transparent 34%),radial-gradient(ellipse at 96% 24%,#09285b 0,transparent 30%),linear-gradient(145deg,#020817,#06142b 58%,#020817);color:#e8f1ff;color-scheme:dark}
+.admin-page .topbar{background:rgba(3,13,31,.95);border-color:#153b70;box-shadow:0 5px 24px #0008}
+.admin-page .brandmark{background:linear-gradient(145deg,#00c8ff,#0755ef);box-shadow:0 0 20px #008cff55}
+.admin-page .brandcopy strong{color:#f2f7ff}.admin-page .brandcopy small{color:#8faedc}
+.admin-page .admin-back,.admin-page .admin-logout,.admin-page .dashboard-refresh{background:#081a36;border-color:#24549a;color:#dceaff}
+.admin-page .admin-welcome h1,.admin-page .admin-section h2,.admin-page .admin-login-card h1{color:#f1f7ff}
+.admin-page .section-sub,.admin-page .admin-stat span{color:#9bb8e2}
+.admin-page .admin-nav,.admin-page .admin-section,.admin-page .admin-login-card{background:linear-gradient(145deg,#0b1e3b,#061329);border-color:#1b4d91;box-shadow:0 12px 32px #0007;color:#e8f1ff}
+.admin-page .admin-nav button{color:#a9c3e8}
+.admin-page .admin-nav button.active,.admin-page .admin-nav button:hover{background:linear-gradient(145deg,#073b91aa,#0757e855);color:#24d5ff;box-shadow:inset 0 0 0 1px #087dff}
+.admin-page .admin-login-card label,.admin-page .admin-form label{color:#bad0f2}
+.admin-page .admin-login-card input,.admin-page .admin-form input{background:#041126;border-color:#24549a;color:#eff6ff}
+.admin-page .admin-login-card input::placeholder,.admin-page .admin-form input::placeholder{color:#7898c8}
+.admin-page .admin-list .history-row,.admin-page .payment-card,.admin-page .admin-empty,.admin-page .dashboard-panel,.admin-page .dashboard-stat,.admin-page .admin-more,.admin-page .admin-upload-area{background:#0b2345;border-color:#1e4f8e;color:#e8f1ff}
+.admin-page .admin-stat strong,.admin-page .payment-email,.admin-page .dashboard-panel-title strong{color:#eaf4ff}
+.admin-page .payment-meta,.admin-page .admin-list small{color:#9bb8e2}
+.admin-page .primary{background:linear-gradient(135deg,#087dff,#0649d8);border-color:#168cff;color:#fff}
+.admin-page .message.info{background:#0b2a55;color:#bfeaff}.admin-page .message.success{background:#0b3a35;color:#8ff2d0}.admin-page .message.error{background:#3a1b2b;color:#ffb1c7}
+.admin-page .payment-status{background:#493813;color:#ffd987}.admin-page .payment-status.approved{background:#0c3b35;color:#8ff2d0}.admin-page .payment-status.rejected{background:#421e2b;color:#ffb1c7}
+.admin-page .payment-reject{background:#351a32;border-color:#9a3f75;color:#ff9ac2}

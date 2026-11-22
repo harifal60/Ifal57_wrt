@@ -1016,8 +1016,8 @@ refreshCustomer().then(() => {
   const root = document.documentElement;
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   const storageKey = 'ifal57_theme_v1';
-  let saved = 'light';
-  try { saved = localStorage.getItem(storageKey) === 'dark' ? 'dark' : 'light'; } catch (_) {}
+  let saved = 'dark';
+  try { const stored = localStorage.getItem(storageKey); saved = stored === 'light' ? 'light' : 'dark'; } catch (_) {}
   const applyTheme = (theme) => {
     const dark = theme === 'dark';
     root.dataset.theme = dark ? 'dark' : 'light';
