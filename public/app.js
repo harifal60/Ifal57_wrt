@@ -1,3 +1,32 @@
+/* Kompatibilitas WebView lama pada sebagian Android TV/STB. */
+(function () {
+  if (!Object.fromEntries) {
+    Object.fromEntries = function (entries) {
+      var result = {};
+      for (var item of entries) {
+        if (item && item.length >= 2) result[item[0]] = item[1];
+      }
+      return result;
+    };
+  }
+
+  // Polyfill sederhana untuk elemen <dialog> pada WebView yang belum mendukungnya.
+  var dialogElement = document.createElement("dialog");
+  var dialogProto = Object.getPrototypeOf(dialogElement);
+  if (dialogProto && typeof dialogElement.showModal !== "function") {
+    dialogProto.showModal = function () {
+      this.setAttribute("open", "");
+      this.setAttribute("role", "dialog");
+      this.setAttribute("aria-modal", "true");
+      this.style.display = "block";
+    };
+    dialogProto.close = function () {
+      this.removeAttribute("open");
+      this.style.display = "none";
+    };
+  }
+})();
+
 /* IFAL57_WRT Premium 2.0 — catalog and admin interactions */
 const $ = (selector) => document.querySelector(selector);
 const dialog = $("#adminDialog");
