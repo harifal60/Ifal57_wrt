@@ -1031,3 +1031,26 @@ refreshCustomer().then(() => {
     try { localStorage.setItem(storageKey, next); } catch (_) {}
   });
 })();
+
+
+/* Bottom navigation actions */
+(() => {
+  const catalogButton = document.getElementById("catalogNavBtn");
+  if (catalogButton) {
+    catalogButton.addEventListener("click", () => {
+      document.body.classList.remove("customer-profile-open");
+      const account = document.getElementById("accountBar");
+      if (account) account.hidden = true;
+      const catalog = document.getElementById("catalog");
+      if (catalog) catalog.scrollIntoView({behavior:"smooth", block:"start"});
+      document.querySelectorAll(".bottom-nav-item").forEach((button) => button.classList.remove("active"));
+      catalogButton.classList.add("active");
+    });
+  }
+  document.querySelectorAll(".bottom-nav-item:not(#catalogNavBtn)").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".bottom-nav-item").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+    });
+  });
+})();

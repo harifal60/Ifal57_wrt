@@ -2,15 +2,21 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#031b1a">
-<title>IFAL57_WRT</title><link rel="stylesheet" href="/style.css?v=sort-apps-1">
+<title>IFAL57_WRT</title><link rel="stylesheet" href="/style.css?v=bottom-nav-4">
 </head>
 <body>
-<header class="topbar"><div class="brandmark">57</div><div class="brandcopy"><strong>IFAL57_WRT</strong><small>ANDROID APP CATALOG</small></div><div class="top-actions"><button id="themeToggle" class="admin-button theme-toggle" type="button" aria-label="Aktifkan mode gelap" aria-pressed="false">🌙</button><button id="aboutBtn" class="admin-button about-button" type="button">Tentang</button><button id="userBtn" class="admin-button">Login / Daftar</button><button id="adminBtn" class="admin-button">Admin <span>↗</span></button></div></header>
+<header class="topbar"><div class="brandmark">57</div><div class="brandcopy"><strong>IFAL57_WRT</strong><small>ANDROID APP CATALOG</small></div><div class="top-actions"><button id="themeToggle" class="admin-button theme-toggle" type="button" aria-label="Aktifkan mode gelap" aria-pressed="false">🌙</button></div></header>
 <main>
 <section id="accountBar" class="account-bar" hidden></section>
 <section class="hero"><div class="hero-content"><div class="eyebrow"><span class="pulse"></span> APK CENTER • ANDROID</div><h1>Temukan aplikasi.<br><span>Download dengan mudah.</span></h1><p>Katalog aplikasi pilihan untuk Android, Android TV dan STB.</p><div class="hero-tags"><span>ANDROID</span><span>ANDROID TV</span><span>STB</span></div></div><div class="hero-art"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="app-logo">57<span>_WRT</span></div><div class="floating-chip">APK COLLECTION</div></div></section>
 <section id="catalog"><div class="sectionhead"><div><div class="eyebrow section-label">LIBRARY</div><h2>Daftar Aplikasi</h2><p class="section-sub">Pilih aplikasi dan unduh versi yang tersedia.</p></div><div class="catalog-controls"><label class="sortbox"><span>Urutkan</span><select id="sortApps" aria-label="Urutkan aplikasi"><option value="newest">Terbaru</option><option value="popular">Terpopuler</option><option value="az">Nama A–Z</option></select></label><div class="searchbox"><span>⌕</span><input id="search" placeholder="Cari aplikasi..." aria-label="Cari aplikasi"></div></div></div><div id="apps" class="apps">Memuat aplikasi...</div></section>
 </main>
+<nav class="bottom-nav" aria-label="Navigasi utama">
+  <button type="button" id="catalogNavBtn" class="bottom-nav-item active" aria-label="Aplikasi"><span class="bottom-nav-icon">▦</span><span>Aplikasi</span></button>
+  <button type="button" id="aboutBtn" class="bottom-nav-item about-button" aria-label="Tentang"><span class="bottom-nav-icon">ⓘ</span><span>Tentang</span></button>
+  <button type="button" id="userBtn" class="bottom-nav-item" aria-label="Akun saya"><span class="bottom-nav-icon">♙</span><span>Akun saya</span></button>
+  <button type="button" id="adminBtn" class="bottom-nav-item" aria-label="Admin"><span class="bottom-nav-icon">⚙</span><span>Admin</span></button>
+</nav>
 <footer><div class="footer-brand"><span class="footer-mark">57</span> IFAL57_WRT</div><span>Made for Android • TV • STB</span></footer>
 <dialog id="aboutDialog" class="about-dialog" aria-labelledby="aboutTitle">
   <button class="close" id="closeAboutDialog" type="button" aria-label="Tutup">✕</button>
@@ -27,4 +33,4 @@
 </dialog>
 <dialog id="adminDialog"><button class="close" id="closeDialog">✕</button><h2 id="dialogTitle">Admin</h2><form id="authForm"><label>Username<input name="username" required autocomplete="username"></label><label>Password<input name="password" type="password" required autocomplete="current-password"></label><button class="primary" id="authSubmit">Masuk</button></form><form id="uploadForm" hidden><label>Nama aplikasi<input name="name" required></label><label>Versi<input name="version" required placeholder="1.0.0"></label><label>Deskripsi<input name="description"></label><label>File APK<input type="file" name="apk" accept="*/*" required></label><button class="primary">Upload APK</button></form><p id="message"></p><button id="logout" hidden>Keluar admin</button></dialog>
 <dialog id="userDialog"><button class="close" id="closeUserDialog">✕</button><h2 id="userDialogTitle">Login IFAL57_WRT</h2><p class="section-sub" id="userDialogNote">Masuk atau daftar untuk menikmati trial gratis 7 hari.</p><form id="customerForm"><label>Email<input name="email" type="email" required autocomplete="email" placeholder="nama@email.com"></label><label>Password<input name="password" type="password" required minlength="10" autocomplete="current-password" placeholder="Minimal 10 karakter"></label><button class="primary" id="customerSubmit">Login</button></form><button type="button" class="text-button" id="forgotPasswordBtn">Lupa password?</button><form id="forgotPasswordForm" hidden><label>Email akun<input name="email" type="email" required autocomplete="email" placeholder="email yang terdaftar"></label><button class="primary" type="submit">Kirim link reset</button><button class="text-button" type="button" id="backToLogin">Kembali ke login</button></form><form id="resetPasswordForm" hidden><label>Password baru<input name="password" type="password" required minlength="10" autocomplete="new-password" placeholder="Minimal 10 karakter"></label><button class="primary" type="submit">Simpan password baru</button></form><button type="button" class="text-button" id="toggleCustomerMode">Belum punya akun? Daftar</button><p id="customerMessage" class="message"></p></dialog>
-<script src="/app.js?v=android-tv-webview-compat-2"></script></body></html>
+<script src="/app.js?v=bottom-nav-4"></script></body></html>
