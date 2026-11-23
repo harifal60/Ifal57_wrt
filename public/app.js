@@ -251,7 +251,21 @@ async function loadPaymentRequests() {
     const payments = Array.isArray(data.payments) ? data.payments : [];
     const pending = payments.filter(p => p.status === "pending");
     if (!payments.length) { container.innerHTML = '<p class="dashboard-empty">Belum ada permintaan pembayaran.</p>'; return; }
-    container.innerHTML = payments.map(p => `<div class="history-row"><div class="history-info"><strong>${esc(p.email)}</strong><small>Rp${Number(p.amount || 25000).toLocaleString("id-ID")} · ${esc(new Date(p.createdAt).toLocaleString("id-ID"))}<br>Device ID: ${esc(p.deviceId || "Belum tercatat")}</small></div><span class="history-status">${p.status === "approved" ? "Premium 30 hari aktif" : "Menunggu"}</span>${p.status === "pending" ? `<button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button>` : ""}<button type="button" class="text-button" data-reset-device="${esc(p.userId)}">Reset perangkat</button></div>`).join("");
+    container.innerHTML = payments.map(p => {
+      const statusLabel = p.status === "approved" ? "Premium 30 hari aktif" : p.status === "rejected" ? "Ditolak" : "Menunggu";
+      const created = p.createdAt ? new Date(p.createdAt).toLocaleString("id-ID") : "—";
+      return `<article class="payment-request-row">
+        <div class="payment-request-info">
+          <strong class="payment-request-email">${esc(p.email || "Akun pelanggan")}</strong>
+          <small>Rp${Number(p.amount || 25000).toLocaleString("id-ID")} · ${esc(created)}<br>Device ID: ${esc(p.deviceId || "Belum tercatat")}</small>
+        </div>
+        <span class="history-status payment-request-status ${esc(p.status || "pending")}">${statusLabel}</span>
+        <div class="payment-request-actions">
+          ${p.status === "pending" ? `<button type="button" class="payment-reject-button" data-reject-payment="${esc(p.id)}">Tolak</button><button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button>` : ""}
+          <button type="button" class="text-button" data-reset-device="${esc(p.userId)}">Reset perangkat</button>
+        </div>
+      </article>`;
+    }).join("");
   } catch (error) { container.innerHTML = `<p class="dashboard-empty">${esc(error.message || "Permintaan tidak dapat dimuat.")}</p>`; }
 }
 
@@ -541,6 +555,19 @@ document.addEventListener("click", async (event) => {
   if (event.target.closest("#refreshPayments")) loadPaymentRequests();
   const approve = event.target.closest("[data-approve-payment]");
   if (approve) { approve.disabled = true; try { await request(`/api/admin/payments/${encodeURIComponent(approve.dataset.approvePayment)}/approve`, { method: "POST" }); await loadPaymentRequests(); await loadApps(); setMessage("Pembayaran disetujui. Premium aktif selama 30 hari.", "success"); } catch (error) { approve.disabled = false; setMessage(error.message, "error"); } }
+  const reject = event.target.closest("[data-reject-payment]");
+  if (reject) {
+    if (!confirm("Tolak permintaan Premium ini?")) return;
+    reject.disabled = true;
+    try {
+      await request(`/api/admin/payments/${encodeURIComponent(reject.dataset.rejectPayment)}/reject`, { method: "POST" });
+      await loadPaymentRequests();
+      setMessage("Permintaan Premium berhasil ditolak.", "success");
+    } catch (error) {
+      reject.disabled = false;
+      setMessage(error.message || "Gagal menolak permintaan Premium.", "error");
+    }
+  }
   const approveApp = event.target.closest("[data-approve-app-access]");
   if (approveApp) {
     if (!confirm("Setujui akun ini agar bisa login melalui aplikasi Android pada Device ID yang diminta?")) return;

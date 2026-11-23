@@ -1668,3 +1668,98 @@ html[data-theme="dark"] .customer-profile-security{background:#0b2347;border-col
 html[data-theme="dark"] .customer-profile-logout{background:#351a32;border-color:#9a3f75;color:#ff9ac2}
 html[data-theme="dark"] .customer-back-button{background:#0b2347;border-color:#24549a;color:#6bd8ff}
 
+
+
+/* Admin Premium requests: email stays horizontal and actions are visible on mobile */
+#adminPaymentsPanel #paymentRequests .payment-request-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 12px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #e2ece8;
+  border-radius: 12px;
+  background: #fbfdfc;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-email {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.4;
+  color: #35566e;
+  font-size: 13px;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-info small {
+  color: #8a9ba8;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-status {
+  justify-self: end;
+  white-space: nowrap;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-actions button {
+  min-height: 40px;
+}
+#adminPaymentsPanel #paymentRequests .payment-reject-button {
+  padding: 9px 14px;
+  border: 1px solid #efcaca;
+  border-radius: 10px;
+  background: #fff1f1;
+  color: #b42323;
+  font-weight: 800;
+  cursor: pointer;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-status.rejected {
+  background: #fff0f0;
+  color: #b42323;
+}
+@media (max-width: 600px) {
+  #adminPaymentsPanel #paymentRequests .payment-request-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 9px;
+  }
+  #adminPaymentsPanel #paymentRequests .payment-request-email {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  #adminPaymentsPanel #paymentRequests .payment-request-status {
+    justify-self: start;
+  }
+  #adminPaymentsPanel #paymentRequests .payment-request-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  #adminPaymentsPanel #paymentRequests .payment-request-actions button {
+    width: 100%;
+    min-width: 0;
+  }
+  #adminPaymentsPanel #paymentRequests .payment-request-actions [data-reset-device] {
+    grid-column: 1 / -1;
+  }
+}
