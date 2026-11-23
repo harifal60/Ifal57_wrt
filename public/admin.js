@@ -20,6 +20,9 @@ async function loadPayments(){
       <div class="payment-actions">
         ${x.status==='pending'?`<button class="payment-reject" data-reject="${esc(x.id)}">Tolak</button><button class="primary" data-approve="${esc(x.id)}">Aktifkan</button>`:''}
         <button class="text-button" data-reset-device="${esc(x.userId)}">Reset perangkat</button>
+        <button class="payment-delete-icon" type="button" data-delete-payment="${esc(x.id)}" aria-label="Hapus catatan permintaan" title="Hapus" >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-9 0 1 13h10l1-13M10 11v5m4-5v5"/></svg>
+        </button>
       </div>
     </article>`;
   }).join(''):'<p class="admin-empty">Belum ada permintaan.</p>'
@@ -35,10 +38,11 @@ document.querySelectorAll('[data-refresh]').forEach(b=>b.addEventListener('click
 $('#adminUploadForm').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget,file=f.elements.apk.files[0],b=f.querySelector('button[type=submit]');if(!file||!file.name.toLowerCase().endsWith('.apk'))return notice($('#uploadMessage'),'Pilih file APK berformat .apk.','error');if(file.size>300*1024*1024)return notice($('#uploadMessage'),'Ukuran file melebihi batas 300 MB.','error');b.disabled=true;b.textContent='Mengunggah...';notice($('#uploadMessage'),'File sedang dikirim ke server...');try{const r=await api('/api/upload',{method:'POST',body:new FormData(f)});f.reset();notice($('#uploadMessage'),r.updated?'APK berhasil diperbarui.':'APK berhasil diunggah.','success')}catch(err){notice($('#uploadMessage'),err.message,'error')}finally{b.disabled=false;b.textContent='Upload APK'}});
 $('#adminUploadForm').elements.apk.addEventListener('change',e=>$('#fileHint').textContent=e.target.files[0]?`${e.target.files[0].name} · ${(e.target.files[0].size/1048576).toFixed(1)} MB`:'Format APK · Maksimal 300 MB');
 document.addEventListener('click',async e=>{
-  const del=e.target.closest('[data-delete-app]'),approve=e.target.closest('[data-approve]'),reject=e.target.closest('[data-reject]'),reset=e.target.closest('[data-reset-device]'),deleteUser=e.target.closest('[data-delete-user]');
+  const del=e.target.closest('[data-delete-app]'),approve=e.target.closest('[data-approve]'),reject=e.target.closest('[data-reject]'),reset=e.target.closest('[data-reset-device]'),deleteUser=e.target.closest('[data-delete-user]'),deletePayment=e.target.closest('[data-delete-payment]');
   try{
     if(deleteUser&&confirm(`Hapus akun ${deleteUser.dataset.userEmail||'ini'} secara permanen? Akun tidak bisa login lagi dan permintaan Premium terkait akan dihapus.`)){deleteUser.disabled=true;deleteUser.textContent='Menghapus...';await api(`/api/admin/users/${encodeURIComponent(deleteUser.dataset.deleteUser)}`,{method:'DELETE'});await loadUsers();await loadPayments();alert('Akun berhasil dihapus.')}
     if(del&&confirm('Yakin ingin menghapus APK ini?')){await api(`/api/apps/${encodeURIComponent(del.dataset.deleteApp)}`,{method:'DELETE'});await loadApps()}
+    if(deletePayment&&confirm('Hapus catatan permintaan Premium ini? Status Premium akun yang sudah aktif tidak akan berubah.')){deletePayment.disabled=true;await api(`/api/admin/payments/${encodeURIComponent(deletePayment.dataset.deletePayment)}`,{method:'DELETE'});await loadPayments()}
     if(approve){approve.disabled=true;await api(`/api/admin/payments/${encodeURIComponent(approve.dataset.approve)}/approve`,{method:'POST'});await loadPayments()}
     if(reject&&confirm('Tolak permintaan Premium ini?')){reject.disabled=true;await api(`/api/admin/payments/${encodeURIComponent(reject.dataset.reject)}/reject`,{method:'POST'});await loadPayments()}
     if(reset&&confirm('Reset ikatan perangkat pengguna ini?')){await api(`/api/admin/users/${encodeURIComponent(reset.dataset.resetDevice)}/reset-device`,{method:'POST'});await loadPage('users')}

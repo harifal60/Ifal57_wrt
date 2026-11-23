@@ -441,3 +441,21 @@
     padding: 7px 6px;
   }
 }
+
+
+/* Tombol hapus catatan Premium: ikon tempat sampah merah */
+.admin-page #adminPayments .payment-actions > .payment-delete-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:38px; min-width:38px; height:36px; min-height:36px;
+  padding:0; border:1px solid #efbcbc; border-radius:9px;
+  background:#fff0f0; color:#c62828; cursor:pointer;
+}
+.admin-page #adminPayments .payment-actions > .payment-delete-icon:hover { background:#ffe1e1; }
+.admin-page #adminPayments .payment-actions > .payment-delete-icon:disabled { opacity:.55; cursor:wait; }
+.admin-page #adminPayments .payment-actions > .payment-delete-icon svg {
+  width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.9;
+  stroke-linecap:round; stroke-linejoin:round;
+}
+@media(max-width:760px) {
+  .admin-page #adminPayments .payment-actions > .payment-delete-icon { grid-column:1 / -1; justify-self:end; }
+}
