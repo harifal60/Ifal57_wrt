@@ -1962,3 +1962,42 @@ html[data-theme="dark"] .customer-back-button{background:#0b2347;border-color:#2
   font-size: 12px !important;
   line-height: 1 !important;
 }
+
+
+/* Tombol hapus catatan permintaan Premium pada dashboard ringkas */
+#adminPaymentsPanel #paymentRequests .payment-delete-icon {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  flex: 0 0 38px !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 8px !important;
+  margin: 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid #efb7b7 !important;
+  border-radius: 9px !important;
+  background: #fff0f0 !important;
+  color: #c62828 !important;
+  cursor: pointer !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-delete-icon svg {
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-delete-icon:disabled {
+  opacity: .55 !important;
+  cursor: wait !important;
+}

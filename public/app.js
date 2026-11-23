@@ -263,6 +263,9 @@ async function loadPaymentRequests() {
         <div class="payment-request-actions">
           ${p.status === "pending" ? `<div class="payment-decision-actions"><button type="button" class="payment-reject-button" data-reject-payment="${esc(p.id)}">Tolak</button><button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button></div>` : ""}
           <button type="button" class="text-button" data-reset-device="${esc(p.userId)}">Reset perangkat</button>
+          <button type="button" class="user-delete-icon payment-delete-icon" data-delete-payment="${esc(p.id)}" aria-label="Hapus catatan permintaan" title="Hapus catatan permintaan">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M9 7V4h6v3m-9 0 1 13h10l1-13M10 11v5m4-5v5"/></svg>
+          </button>
         </div>
       </article>`;
     }).join("");
@@ -599,6 +602,20 @@ document.addEventListener("click", async (event) => {
       deleteUser.disabled = false;
       deleteUser.textContent = "Hapus akun";
       setMessage(error.message || "Gagal menghapus akun.", "error");
+    }
+    return;
+  }
+  const deletePayment = event.target.closest("[data-delete-payment]");
+  if (deletePayment) {
+    if (!confirm("Hapus catatan permintaan Premium ini? Akun pelanggan dan status Premium yang sudah aktif tidak akan berubah.")) return;
+    deletePayment.disabled = true;
+    try {
+      await request(`/api/admin/payments/${encodeURIComponent(deletePayment.dataset.deletePayment)}`, { method: "DELETE" });
+      await loadPaymentRequests();
+      setMessage("Catatan permintaan Premium berhasil dihapus.", "success");
+    } catch (error) {
+      deletePayment.disabled = false;
+      setMessage(error.message || "Gagal menghapus catatan Premium.", "error");
     }
     return;
   }
