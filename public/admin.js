@@ -18,7 +18,7 @@ async function loadPayments(){
         <span class="payment-status ${esc(x.status)}">${status}</span>
       </div>
       <div class="payment-actions">
-        ${x.status==='pending'?`<button class="primary" data-approve="${esc(x.id)}">Aktifkan</button><button class="payment-reject" data-reject="${esc(x.id)}">Tolak</button>`:''}
+        ${x.status==='pending'?`<button class="payment-reject" data-reject="${esc(x.id)}">Tolak</button><button class="primary" data-approve="${esc(x.id)}">Aktifkan</button>`:''}
         <button class="text-button" data-reset-device="${esc(x.userId)}">Reset perangkat</button>
       </div>
     </article>`;
