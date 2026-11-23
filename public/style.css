@@ -2014,3 +2014,50 @@ html[data-theme="dark"] .customer-back-button{background:#0b2347;border-color:#2
 .admin-subpage-description{margin:0 0 13px;color:#8293a0;font-size:11px;line-height:1.5}
 .admin-subpage .download-history{margin-top:10px}
 @media(max-width:390px){.admin-subpage{padding:11px}.admin-shortcuts-grid .admin-shortcut{min-height:108px}}
+
+
+/* FIX: ikon hapus pada halaman Permintaan Premium terpisah */
+#adminPaymentsPage #paymentRequests .payment-delete-icon {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  flex: 0 0 38px !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 8px !important;
+  margin: 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid #efb7b7 !important;
+  border-radius: 9px !important;
+  background: #fff0f0 !important;
+  color: #c62828 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+#adminPaymentsPage #paymentRequests .payment-delete-icon:hover {
+  background: #ffe2e2 !important;
+  border-color: #e89a9a !important;
+}
+#adminPaymentsPage #paymentRequests .payment-delete-icon svg {
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+#adminPaymentsPage #paymentRequests .payment-delete-icon:disabled {
+  opacity: .55 !important;
+  cursor: wait !important;
+}
