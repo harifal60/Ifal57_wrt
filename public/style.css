@@ -2001,3 +2001,16 @@ html[data-theme="dark"] .customer-back-button{background:#0b2347;border-color:#2
   opacity: .55 !important;
   cursor: wait !important;
 }
+
+/* Admin navigation: separate pages for users and premium requests */
+.admin-shortcuts-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.users-shortcut{background:linear-gradient(135deg,#477c91,#315d72)}
+.analytics-shortcut{background:linear-gradient(135deg,#668779,#456b60)}
+.admin-subpage{margin-top:4px;padding:14px;border:1px solid #dce8e5;border-radius:15px;background:#fff}
+.admin-subpage[hidden]{display:none!important}
+.admin-subpage-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.admin-back-button{padding:8px 11px;border:1px solid #d8e6e2;border-radius:10px;background:#f7fbfa;color:#31566a;font-size:11px;font-weight:800}
+.admin-subpage h4{margin:0 0 5px;color:#24445a;font-size:16px}
+.admin-subpage-description{margin:0 0 13px;color:#8293a0;font-size:11px;line-height:1.5}
+.admin-subpage .download-history{margin-top:10px}
+@media(max-width:390px){.admin-subpage{padding:11px}.admin-shortcuts-grid .admin-shortcut{min-height:108px}}

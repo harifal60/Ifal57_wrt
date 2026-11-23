@@ -147,19 +147,31 @@ function ensureAdminDashboard() {
   dashboard.hidden = true;
   dashboard.innerHTML = `
     <div class="popup-admin-brand"><div><span class="dashboard-kicker">IFAL-WRT · ADMIN PANEL</span><h3>Dashboard Admin</h3><p>Kelola aplikasi dan permintaan premium.</p></div><button type="button" class="dashboard-refresh" id="refreshAdminStats" aria-label="Refresh statistik">↻</button></div>
-    <div class="admin-shortcuts">
-      <button type="button" class="admin-shortcut upload-shortcut" data-admin-action="upload"><span class="shortcut-icon">⇧</span><strong>Upload APK</strong><small>Unggah aplikasi terbaru</small><span class="shortcut-arrow">›</span></button>
-      <button type="button" class="admin-shortcut premium-shortcut" data-admin-action="premium"><span class="shortcut-icon">♛</span><strong>Permintaan Premium</strong><small>Kelola permintaan pengguna</small><span class="shortcut-arrow">›</span></button>
+    <div id="adminHomeView" class="admin-page-view">
+      <div class="admin-shortcuts admin-shortcuts-grid">
+        <button type="button" class="admin-shortcut upload-shortcut" data-admin-action="upload"><span class="shortcut-icon">⇧</span><strong>Upload APK</strong><small>Unggah aplikasi terbaru</small><span class="shortcut-arrow">›</span></button>
+        <button type="button" class="admin-shortcut users-shortcut" data-admin-page="users"><span class="shortcut-icon">♙</span><strong>Data Pengguna</strong><small>Akun & Device ID</small><span class="shortcut-arrow">›</span></button>
+        <button type="button" class="admin-shortcut premium-shortcut" data-admin-page="payments"><span class="shortcut-icon">♛</span><strong>Permintaan Premium</strong><small>Kelola permintaan pengguna</small><span class="shortcut-arrow">›</span></button>
+        <button type="button" class="admin-shortcut analytics-shortcut" data-admin-action="analytics"><span class="shortcut-icon">▥</span><strong>Analitik</strong><small>Statistik unduhan</small><span class="shortcut-arrow">›</span></button>
+      </div>
+      <div class="stats-heading"><h4>Statistik Singkat</h4></div>
+      <div class="dashboard-cards" id="dashboardCards"></div>
+      <details class="admin-more" id="adminAnalyticsPanel"><summary>Analitik unduhan</summary>
+        <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Unduhan 7 hari terakhir</strong><span>Harian</span></div><div class="dashboard-chart" id="dashboardChart"></div></div>
+        <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Aplikasi terpopuler</strong><span>Top 5</span></div><div class="dashboard-ranking" id="dashboardRanking"></div></div>
+      </details>
+      <div id="adminUploadArea" class="admin-upload-area" hidden></div>
     </div>
-    <div class="stats-heading"><h4>Statistik Singkat</h4></div>
-    <div class="dashboard-cards" id="dashboardCards"></div>
-    <details class="admin-more"><summary>Analitik unduhan</summary>
-      <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Unduhan 7 hari terakhir</strong><span>Harian</span></div><div class="dashboard-chart" id="dashboardChart"></div></div>
-      <div class="dashboard-panel"><div class="dashboard-panel-title"><strong>Aplikasi terpopuler</strong><span>Top 5</span></div><div class="dashboard-ranking" id="dashboardRanking"></div></div>
-    </details>
-    <details class="admin-more" id="adminUsersPanel"><summary>Daftar Pengguna & Device ID <button type="button" id="refreshUsers" class="dashboard-refresh">Refresh</button></summary><div id="registeredUsers" class="download-history"></div></details>
-    <details class="admin-more" id="adminPaymentsPanel"><summary>Permintaan Premium 30 Hari <button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></summary><div id="paymentRequests" class="download-history"></div></details>
-    <div id="adminUploadArea" class="admin-upload-area" hidden></div>`;
+    <section id="adminUsersPage" class="admin-subpage" hidden>
+      <div class="admin-subpage-heading"><button type="button" class="admin-back-button" data-admin-page="home">← Kembali</button><button type="button" id="refreshUsers" class="dashboard-refresh">Refresh</button></div>
+      <h4>Data Pengguna & Device ID</h4><p class="admin-subpage-description">Kelola akun pelanggan dan ikatan perangkat.</p>
+      <div id="registeredUsers" class="download-history"></div>
+    </section>
+    <section id="adminPaymentsPage" class="admin-subpage" hidden>
+      <div class="admin-subpage-heading"><button type="button" class="admin-back-button" data-admin-page="home">← Kembali</button><button type="button" id="refreshPayments" class="dashboard-refresh">Refresh</button></div>
+      <h4>Permintaan Premium 30 Hari</h4><p class="admin-subpage-description">Setujui, tolak, reset perangkat, atau hapus catatan permintaan.</p>
+      <div id="paymentRequests" class="download-history"></div>
+    </section>`;
   const intro = $("#adminIntro");
   const uploadForm = $("#uploadForm");
   if (intro && uploadForm) {
@@ -169,6 +181,20 @@ function ensureAdminDashboard() {
     uploadForm.insertAdjacentElement("beforebegin", dashboard);
     dashboard.querySelector("#adminUploadArea").appendChild(uploadForm);
   }
+}
+
+function showAdminPage(page) {
+  const home = $("#adminHomeView");
+  const users = $("#adminUsersPage");
+  const payments = $("#adminPaymentsPage");
+  if (!home || !users || !payments) return;
+  home.hidden = page !== "home";
+  users.hidden = page !== "users";
+  payments.hidden = page !== "payments";
+  if (page === "users") loadRegisteredUsers();
+  if (page === "payments") loadPaymentRequests();
+  const dashboard = $("#adminDashboard");
+  if (dashboard) dashboard.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderAdminStats(stats) {
@@ -799,8 +825,10 @@ document.addEventListener("click", (event) => {
     const area = $("#adminUploadArea");
     if (area) { area.hidden = !area.hidden; if (!area.hidden) area.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
   }
-  if (adminAction && adminAction.dataset && adminAction.dataset.adminAction === "premium") {
-    const panel = $("#adminPaymentsPanel");
+  const pageAction = event.target.closest("[data-admin-page]");
+  if (pageAction) showAdminPage(pageAction.dataset.adminPage);
+  if (adminAction && adminAction.dataset && adminAction.dataset.adminAction === "analytics") {
+    const panel = $("#adminAnalyticsPanel");
     if (panel) { panel.open = true; panel.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
   }
   if (event.target.closest("#refreshAdminStats")) loadAdminStats();
