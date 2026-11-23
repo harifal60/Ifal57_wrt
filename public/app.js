@@ -261,7 +261,7 @@ async function loadPaymentRequests() {
         </div>
         <span class="history-status payment-request-status ${esc(p.status || "pending")}">${statusLabel}</span>
         <div class="payment-request-actions">
-          ${p.status === "pending" ? `<button type="button" class="payment-reject-button" data-reject-payment="${esc(p.id)}">Tolak</button><button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button>` : ""}
+          ${p.status === "pending" ? `<div class="payment-decision-actions"><button type="button" class="payment-reject-button" data-reject-payment="${esc(p.id)}">Tolak</button><button type="button" class="primary" data-approve-payment="${esc(p.id)}">Aktifkan</button></div>` : ""}
           <button type="button" class="text-button" data-reset-device="${esc(p.userId)}">Reset perangkat</button>
         </div>
       </article>`;

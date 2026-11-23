@@ -1855,3 +1855,110 @@ html[data-theme="dark"] .customer-back-button{background:#0b2347;border-color:#2
     padding: 5px 6px !important;
   }
 }
+
+
+/* Definitive mobile layout for Premium request cards */
+#adminPaymentsPanel #paymentRequests .payment-request-row {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  padding: 12px !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-info {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 4px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-email {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-info small {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-status {
+  align-self: flex-start !important;
+  justify-self: start !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 2px 0 0 !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-decision-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  justify-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-decision-actions > button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  border-width: 1px !important;
+  border-radius: 9px !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  transform: none !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-decision-actions .payment-reject-button {
+  background: #fff1f1 !important;
+  border: 1px solid #efcaca !important;
+  color: #b42323 !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-decision-actions [data-approve-payment] {
+  background: #11796f !important;
+  border: 1px solid #11796f !important;
+  color: #fff !important;
+}
+#adminPaymentsPanel #paymentRequests .payment-request-actions > [data-reset-device] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  align-self: center !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 auto !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
