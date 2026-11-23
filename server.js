@@ -431,6 +431,16 @@ app.get("/api/admin/users", isAdmin, (req, res) => {
 });
 
 app.get("/api/admin/payments", isAdmin, (req, res) => res.json({ payments: readPayments().sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }));
+app.delete("/api/admin/payments/:id", isAdmin, (req, res) => {
+  const payments = readPayments();
+  const index = payments.findIndex(item => item.id === req.params.id);
+  if (index < 0) return res.status(404).json({ error: "Catatan permintaan tidak ditemukan." });
+  // Hanya menghapus riwayat permintaan; tidak mengubah status atau masa Premium akun.
+  payments.splice(index, 1);
+  writePayments(payments);
+  res.json({ ok: true });
+});
+
 app.post("/api/admin/payments/:id/approve", isAdmin, (req, res) => {
   const payments = readPayments();
   const payment = payments.find(item => item.id === req.params.id);
