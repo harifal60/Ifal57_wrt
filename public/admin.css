@@ -282,3 +282,78 @@
 .admin-page .message.info{background:#0b2a55;color:#bfeaff}.admin-page .message.success{background:#0b3a35;color:#8ff2d0}.admin-page .message.error{background:#3a1b2b;color:#ffb1c7}
 .admin-page .payment-status{background:#493813;color:#ffd987}.admin-page .payment-status.approved{background:#0c3b35;color:#8ff2d0}.admin-page .payment-status.rejected{background:#421e2b;color:#ffb1c7}
 .admin-page .payment-reject{background:#351a32;border-color:#9a3f75;color:#ff9ac2}
+
+
+/* IFAL57_WRT: final fix layout email and Premium action buttons on mobile */
+.admin-page #adminPayments .payment-card {
+  box-sizing: border-box;
+  min-width: 0;
+}
+.admin-page #adminPayments .payment-main {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+.admin-page #adminPayments .payment-email {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  letter-spacing: normal;
+  writing-mode: horizontal-tb;
+  line-height: 1.45;
+}
+.admin-page #adminPayments .payment-actions {
+  min-width: 0;
+}
+.admin-page #adminPayments .payment-actions [data-reject],
+.admin-page #adminPayments .payment-actions [data-approve] {
+  min-width: 0;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .admin-page #adminPayments .payment-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+  .admin-page #adminPayments .payment-main {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .admin-page #adminPayments .payment-email {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    font-size: 14px !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    word-break: normal !important;
+  }
+  .admin-page #adminPayments .payment-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: 8px !important;
+  }
+  .admin-page #adminPayments .payment-actions > button {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+  }
+  .admin-page #adminPayments .payment-actions [data-reset-device] {
+    grid-column: 1 / -1 !important;
+    justify-self: stretch !important;
+  }
+}
